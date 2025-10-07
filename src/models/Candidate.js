@@ -6,7 +6,8 @@ const CandidateSchema = new mongoose.Schema({
   profile: { type: String },
   avatar: { type: String },
   experience_years: { type: Number },
-  skills: { type: String }
+  skills: { type: String },
+  cv: { type: String }
 });
 
 module.exports = mongoose.model('Candidate', CandidateSchema);
