@@ -60,11 +60,23 @@ export const updateJob = async (req, res) => {
 }
 
 // delete job by id
-export const deleteJob = async (req, res) => {  
+// export const deleteJob = async (req, res) => {  
+//   const { id } = req.params;
+//   const deletedJob = await Job.findByIdAndDelete(id);
+//   if (!deletedJob) {
+//     return res.json(toResultError({ statusCode: 404, msg: MESSAGE.JOB_NOT_FOUND }));
+//   }
+//   res.json(toResultOkWithMessage({ msg: MESSAGE.JOB_DELETE_SUCCESS }));
+// }
+
+// deactivate job by id
+export const deactivateJob = async (req, res) => {
   const { id } = req.params;
-  const deletedJob = await Job.findByIdAndDelete(id);
-  if (!deletedJob) {
+  const job = await Job.findById(id);
+  if (!job) {
     return res.json(toResultError({ statusCode: 404, msg: MESSAGE.JOB_NOT_FOUND }));
   }
-  res.json(toResultOkWithMessage({ msg: MESSAGE.JOB_DELETE_SUCCESS }));
+  job.isActive = false;
+  await job.save();
+  res.json(toResultOkWithMessage({ msg: MESSAGE.JOB_DEACTIVATE_SUCCESS }));
 }
