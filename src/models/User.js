@@ -1,5 +1,4 @@
-
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema({
   role_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Role', required: true },
@@ -12,4 +11,4 @@ const UserSchema = new mongoose.Schema({
   FullName: { type: String, required: true, maxlength: 100 }
 });
 
-module.exports = mongoose.model('User', UserSchema);
+export default mongoose.model('User', UserSchema);

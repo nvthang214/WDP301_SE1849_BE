@@ -1,8 +1,11 @@
-
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const RoleSchema = new mongoose.Schema({
-  name: { type: String, required: true, enum: ['admin', 'user', 'recruiter', 'guest'] },
+  name: { 
+    type: String, 
+    required: true, 
+    enum: ['admin', 'user', 'recruiter', 'guest'] 
+  },
 });
 
-module.exports = mongoose.model('Role', RoleSchema);
+export default mongoose.model('Role', RoleSchema);
