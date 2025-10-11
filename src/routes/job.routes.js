@@ -7,17 +7,17 @@ import {
     // deleteJob,
     deactivateJob
 } from '../controllers/job.controllers.js';
-import wrapAsync from '../utils/handler.js';
+import {wrapAsync} from '../utils/handler.js';
 const jobRoutes = express.Router();
 
 // get all jobs
-jobRoutes.get('/list', wrapAsync(getAllJobs));
+jobRoutes.get('/', wrapAsync(getAllJobs));
 // create new job
-jobRoutes.post('/create', wrapAsync(createJob));
+jobRoutes.post('/post', wrapAsync(createJob));
 // get job by id
 jobRoutes.get('/:id', wrapAsync(getJobById));
 // update job by id
-jobRoutes.put('/:id', wrapAsync(updateJob));
+jobRoutes.put('/edit/:id', wrapAsync(updateJob));
 // delete job by id
 // jobRoutes.delete('/:id', wrapAsync(deleteJob));
 // deactivate job by id
