@@ -1,5 +1,5 @@
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const JobSavedSchema = new mongoose.Schema({
   candidate_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate', required: true },
@@ -7,4 +7,4 @@ const JobSavedSchema = new mongoose.Schema({
   saved_at: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('JobSaved', JobSavedSchema);
+export default mongoose.model('JobSaved', JobSavedSchema);

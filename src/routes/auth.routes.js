@@ -9,3 +9,4 @@ authRoutes.post('/register', register);              // POST /api/auth/register
 authRoutes.get('/verify', verifyToken);             // GET /api/auth/verify
 
 export default authRoutes;
+

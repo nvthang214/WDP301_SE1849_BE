@@ -1,5 +1,5 @@
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const CandidateSchema = new mongoose.Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -10,4 +10,4 @@ const CandidateSchema = new mongoose.Schema({
   cv: { type: String }
 });
 
-module.exports = mongoose.model('Candidate', CandidateSchema);
+export default mongoose.model('Candidate', CandidateSchema);

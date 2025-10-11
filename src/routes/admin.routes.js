@@ -4,7 +4,10 @@ import {
   updateUserRole,
   getAllUsers,
   getAllRoles,
-  getUserById
+  getUserById,
+  getAllJobs,
+  toggleJobVisibility,
+  deleteJob
 } from '../controllers/adminController.js';
 import { checkAdminRole } from '../middlewares/adminAuth.middleware.js';
 
@@ -21,5 +24,10 @@ adminRoutes.put('/users/:userId/role', updateUserRole);   // PUT /api/admin/user
 
 // Role management routes
 adminRoutes.get('/roles', getAllRoles);                    // GET /api/admin/roles
+
+// Job management routes
+adminRoutes.get('/jobs', getAllJobs);                      // GET /api/admin/jobs
+adminRoutes.put('/jobs/:jobId/toggle', toggleJobVisibility); // PUT /api/admin/jobs/:jobId/toggle
+adminRoutes.delete('/jobs/:jobId', deleteJob);             // DELETE /api/admin/jobs/:jobId
 
 export default adminRoutes;
