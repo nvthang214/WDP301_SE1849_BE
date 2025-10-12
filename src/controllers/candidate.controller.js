@@ -3,7 +3,7 @@ import Application from '../models/Application.js';
 import User from '../models/User.js';
 import Candidate from '../models/Candidate.js';
 import { MESSAGE } from '../constants/message.js';
-import { toResultOkWithMessageAndData, toResultError } from '../results/Result.js';
+import { toResultOk, toResultError } from '../results/Result.js';
 
 // @desc    Get candidates
 // @route   GET /api/jobs/:jobId/candidates
@@ -13,13 +13,12 @@ export const getCandidates = async (req, res) => {
   const { jobId } = req.params;
   const { search, status } = req.query;
 
-  // Check if user is a recruiter
-  if (req.user.Role !== 'recruiter') {
-    return res.json(toResultError({ statusCode: 403, msg: MESSAGE.NOT_AUTHORIZED }));
-  }
-
   try {
-    let query = {};
+    // Check if user is a recruiter
+    const recruiter = await User.findById(req.user._id).populate('role');
+    if (!recruiter || recruiter.role.name !== 'recruiter') {
+      return res.json(toResultError({ statusCode: 403, msg: MESSAGE.NOT_AUTHORIZED }));
+    }
 
     if (jobId) {
       // Find applications for the specific job
@@ -27,11 +26,12 @@ export const getCandidates = async (req, res) => {
         path: 'candidate_id',
         populate: {
           path: 'user_id',
-          select: 'FullName Email phone_number' // Select fields from User model
+          select: 'firstName lastName email phoneNumber' // Select fields from User model
         }
       });
 
       let candidates = applications.map(app => {
+        if (!app.candidate_id || !app.candidate_id.user_id) return null;
         const candidateData = app.candidate_id;
         const userData = candidateData.user_id;
         return {
@@ -42,31 +42,33 @@ export const getCandidates = async (req, res) => {
             user: userData.toObject()
           }
         };
-      });
+      }).filter(Boolean); // Remove null entries
 
-      // Further filtering based on query params can be added here
+      // Further filtering based on query params
       if (status) {
         candidates = candidates.filter(c => c.status === status);
       }
 
       if (search) {
-        candidates = candidates.filter(c =>
-          c.candidate.user.FullName.toLowerCase().includes(search.toLowerCase())
-        );
+        const searchTerm = search.toLowerCase();
+        candidates = candidates.filter(c => {
+          const user = c.candidate.user;
+          return user.firstName.toLowerCase().includes(searchTerm) || 
+                 user.lastName.toLowerCase().includes(searchTerm);
+        });
       }
 
-
       return res.json(
-        toResultOkWithMessageAndData({
-          msg: 'Candidates fetched successfully',
+        toResultOk({
+          msg: 'Candidates for job fetched successfully',
           data: candidates,
         })
       );
     } else {
       // Logic for fetching all candidates (not job-specific)
-      const allCandidates = await Candidate.find().populate('user_id', 'FullName Email phone_number');
+      const allCandidates = await Candidate.find().populate('user_id', 'firstName lastName email phoneNumber');
        return res.json(
-        toResultOkWithMessageAndData({
+        toResultOk({
           msg: 'All candidates fetched successfully',
           data: allCandidates,
         })

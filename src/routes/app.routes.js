@@ -10,7 +10,6 @@ const appRoutes = express.Router();
 import userRoutes from './user.routes.js';
 import applicationRoutes from './application.routes.js';
 import candidateRoutes from './candidate.routes.js';
-import jobRoutes from './job.routes.js';
 
 // appRoutes.use("/auth", authRoutes);
 appRoutes.use('/users', userRoutes);
@@ -19,7 +18,6 @@ appRoutes.use('/candidates', candidateRoutes);
 appRoutes.use('/jobs', jobRoutes);
 appRoutes.use("/auth", authRoutes);
 
-appRoutes.use("/jobs", jobRoutes);
 
 // Admin routes
 appRoutes.use("/admin", adminRoutes);

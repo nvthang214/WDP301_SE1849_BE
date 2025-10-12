@@ -2,24 +2,24 @@ import User from '../models/User.js';
 import Candidate from '../models/Candidate.js';
 import Recruiter from '../models/Recruiter.js';
 import { MESSAGE } from '../constants/message.js';
-import { toResultOkWithMessageAndData, toResultError } from '../results/Result.js';
+import { toResultOk, toResultError } from '../results/Result.js';
 
 export const getProfile = async (req, res) => {
-  const userId = req.user._id;
+  const { userId } = req.params;
 
-  const user = await User.findById(userId).select('-Password');
+  const user = await User.findById(userId).populate('role').select('-password');
   if (!user) {
     return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
   }
 
   let profileData = { ...user.toObject() };
 
-  if (user.Role === 'candidate') {
+  if (user.role.name === 'user') {
     const candidateProfile = await Candidate.findOne({ user_id: userId });
     if (candidateProfile) {
       profileData = { ...profileData, ...candidateProfile.toObject() };
     }
-  } else if (user.Role === 'recruiter') {
+  } else if (user.role.name === 'recruiter') {
     const recruiterProfile = await Recruiter.findOne({ user_id: userId });
     if (recruiterProfile) {
       profileData = { ...profileData, ...recruiterProfile.toObject() };
@@ -27,7 +27,7 @@ export const getProfile = async (req, res) => {
   }
 
   res.json(
-    toResultOkWithMessageAndData({
+    toResultOk({
       msg: MESSAGE.USER_PROFILE_FETCH_SUCCESS,
       data: profileData,
     })
@@ -35,22 +35,29 @@ export const getProfile = async (req, res) => {
 };
 
 export const updateProfile = async (req, res) => {
-  const userId = req.user._id;
-  const { FullName, phone_number, ...profileDetails } = req.body;
+  const userId = req.user?._id || req.params.userId;
+  const { firstName, lastName, phoneNumber, ...profileDetails } = req.body;
 
-  const user = await User.findByIdAndUpdate(
-    userId,
-    { FullName, phone_number },
-    { new: true }
-  ).select('-Password');
+  const user = await User.findById(userId).populate('role');
 
   if (!user) {
     return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
   }
 
-  let profileData = { ...user.toObject() };
+  // Update user fields
+  if (firstName) user.firstName = firstName;
+  if (lastName) user.lastName = lastName;
+  if (phoneNumber) user.phoneNumber = phoneNumber;
+  
+  await user.save();
 
-  if (user.Role === 'candidate') {
+  // Exclude password from the response
+  const userObject = user.toObject();
+  delete userObject.password;
+
+  let profileData = { ...userObject };
+
+  if (user.role.name === 'user') {
     const { profile, avatar, experience_years, skills, cv } = profileDetails;
     const candidateProfile = await Candidate.findOneAndUpdate(
       { user_id: userId },
@@ -60,7 +67,7 @@ export const updateProfile = async (req, res) => {
     if (candidateProfile) {
       profileData = { ...profileData, ...candidateProfile.toObject() };
     }
-  } else if (user.Role === 'recruiter') {
+  } else if (user.role.name === 'recruiter') {
     const { position } = profileDetails;
     const recruiterProfile = await Recruiter.findOneAndUpdate(
       { user_id: userId },
@@ -73,7 +80,7 @@ export const updateProfile = async (req, res) => {
   }
 
   res.json(
-    toResultOkWithMessageAndData({
+    toResultOk({
       msg: MESSAGE.USER_PROFILE_UPDATE_SUCCESS,
       data: profileData,
     })
@@ -83,7 +90,7 @@ export const updateProfile = async (req, res) => {
 export const getUserById = async (req, res) => {
   const { id } = req.params;
 
-  const user = await User.findById(id).select('-Password');
+  const user = await User.findById(id).populate('role').select('-password');
   if (!user) {
     return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
   }
@@ -91,12 +98,12 @@ export const getUserById = async (req, res) => {
   // In a real app, you might want to check if the requester is an admin here.
   let profileData = { ...user.toObject() };
 
-  if (user.Role === 'candidate') {
+  if (user.role.name === 'user') {
     const candidateProfile = await Candidate.findOne({ user_id: id });
     if (candidateProfile) {
       profileData = { ...profileData, ...candidateProfile.toObject() };
     }
-  } else if (user.Role === 'recruiter') {
+  } else if (user.role.name === 'recruiter') {
     const recruiterProfile = await Recruiter.findOne({ user_id: id });
     if (recruiterProfile) {
       profileData = { ...profileData, ...recruiterProfile.toObject() };
@@ -104,7 +111,7 @@ export const getUserById = async (req, res) => {
   }
 
   res.json(
-    toResultOkWithMessageAndData({
+    toResultOk({
       msg: MESSAGE.USER_PROFILE_FETCH_SUCCESS,
       data: profileData,
     })

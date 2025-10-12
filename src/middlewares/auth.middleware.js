@@ -14,9 +14,14 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
  * Nếu không hợp lệ, trả về lỗi 401 Unauthorized.
  */
 export const authMiddleware = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next(new ErrorResponse(401, MESSAGE.JWT_INVALID));
+  }
+
+  const token = authHeader.split(' ')[1];
+
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) throw new Error();
     const { payload } = await jwtVerify(token, JWT_SECRET);
     req.user = payload;
     next();

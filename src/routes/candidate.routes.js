@@ -4,10 +4,10 @@ import { getCandidates } from '../controllers/candidate.controller.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
-
+// router.use(authMiddleware);
 // @route   GET /api/candidates
 // @desc    Get all candidates
 // @access  Private/Recruiter
-router.get('/', authMiddleware, getCandidates);
+router.get('/', getCandidates);
 
 export default router;
