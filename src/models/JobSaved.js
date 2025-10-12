@@ -1,4 +1,4 @@
-
+import mongoose from 'mongoose';
 const mongoose = require('mongoose');
 
 const JobSavedSchema = new mongoose.Schema({
@@ -7,4 +7,4 @@ const JobSavedSchema = new mongoose.Schema({
   saved_at: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('JobSaved', JobSavedSchema);
+export default mongoose.model('JobSaved', JobSavedSchema);

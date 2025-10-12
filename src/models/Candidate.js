@@ -1,4 +1,4 @@
-
+import mongoose from 'mongoose';
 const mongoose = require('mongoose');
 
 const CandidateSchema = new mongoose.Schema({
@@ -10,4 +10,4 @@ const CandidateSchema = new mongoose.Schema({
   cv: { type: String }
 });
 
-module.exports = mongoose.model('Candidate', CandidateSchema);
+export default mongoose.model('Candidate', CandidateSchema);

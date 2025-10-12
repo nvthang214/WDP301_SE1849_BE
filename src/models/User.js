@@ -1,4 +1,4 @@
-
+import mongoose from 'mongoose';
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
@@ -12,4 +12,4 @@ const UserSchema = new mongoose.Schema({
   FullName: { type: String, required: true, maxlength: 100 }
 });
 
-module.exports = mongoose.model('User', UserSchema);
+export default mongoose.model('User', UserSchema);

@@ -1,4 +1,4 @@
-
+import mongoose from 'mongoose';
 const mongoose = require('mongoose');
 
 const ChatbotSchema = new mongoose.Schema({
@@ -8,4 +8,4 @@ const ChatbotSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Chatbot', ChatbotSchema);
+export default mongoose.model('Chatbot', ChatbotSchema);

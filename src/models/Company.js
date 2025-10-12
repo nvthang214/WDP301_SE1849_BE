@@ -1,4 +1,4 @@
-
+import mongoose from 'mongoose';
 const mongoose = require('mongoose');
 
 const CompanySchema = new mongoose.Schema({
@@ -9,4 +9,4 @@ const CompanySchema = new mongoose.Schema({
   industry: { type: String }
 });
 
-module.exports = mongoose.model('Company', CompanySchema);
+export default mongoose.model('Company', CompanySchema);

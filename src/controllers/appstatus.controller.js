@@ -1,8 +1,9 @@
 import Application from '../models/Application.js';
 import Candidate from '../models/Candidate.js';
+import Job from '../models/Job.js';
 import { MESSAGE } from '../constants/message.js';
 
-// View the status of submitted job applications
+// Xem trạng thái của các đơn xin việc đã nộp
 export const viewApplicationStatus = async (req, res) => {
 	try {
 		const userId = req.user._id;
@@ -18,7 +19,7 @@ export const viewApplicationStatus = async (req, res) => {
 	}
 };
 
-// Import (create/update) a new CV for applying job
+// Nhập CV mới để ứng tuyển
 export const importCV = async (req, res) => {
 	try {
 		const userId = req.user._id;
@@ -34,13 +35,13 @@ export const importCV = async (req, res) => {
 		if (!candidate) {
 			return res.status(404).json({ message: MESSAGE.NOT_FOUND });
 		}
-		return res.status(200).json({ message: 'CV imported successfully', candidate });
+		return res.status(200).json({ message: MESSAGE.CV_IMPORT_SUCCESS, candidate });
 	} catch (error) {
-		return res.status(500).json({ message: MESSAGE.SYSTEM_ERROR });
+		return res.status(500).json({ message: MESSAGE.CV_IMPORT_FAILED });
 	}
 };
 
-// Delete own existing CV
+// Xóa CV hiện tại của user 
 export const deleteCV = async (req, res) => {
 	try {
 		const userId = req.user._id;
@@ -50,7 +51,42 @@ export const deleteCV = async (req, res) => {
 		}
 		candidate.cv = undefined;
 		await candidate.save();
-		return res.status(200).json({ message: 'CV deleted successfully' });
+		return res.status(200).json({ message: MESSAGE.CV_DELETE_SUCCESS });
+	} catch (error) {
+		return res.status(500).json({ message: MESSAGE.CV_DELETE_FAILED });
+	}
+};
+
+// Ứng viên nộp đơn ứng tuyển sử dụng CV đã tạo hoặc upload
+export const applyJob = async (req, res) => {
+	try {
+		const userId = req.user._id;
+		const { job_id, coverLetter } = req.body;
+		if (!job_id) {
+			return res.status(400).json({ message: 'Job ID is required' });
+		}
+		const candidate = await Candidate.findOne({ user_id: userId });
+		if (!candidate) {
+			return res.status(404).json({ message: MESSAGE.NOT_FOUND });
+		}
+		if (!candidate.cv) {
+			return res.status(400).json({ message: 'Bạn cần tạo hoặc upload CV trước khi ứng tuyển.' });
+		}
+		const job = await Job.findById(job_id);
+		if (!job) {
+			return res.status(404).json({ message: 'Job not found' });
+		}
+		const existed = await Application.findOne({ candidate_id: candidate._id, job_id });
+		if (existed) {
+			return res.status(400).json({ message: 'Bạn đã ứng tuyển công việc này rồi.' });
+		}
+		const application = await Application.create({
+			candidate_id: candidate._id,
+			job_id,
+			status: 'pending',
+			coverLetter: coverLetter || '',
+		});
+		return res.status(201).json({ message: 'Ứng tuyển thành công', application });
 	} catch (error) {
 		return res.status(500).json({ message: MESSAGE.SYSTEM_ERROR });
 	}

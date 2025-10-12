@@ -1,4 +1,4 @@
-
+import mongoose from 'mongoose';
 const mongoose = require('mongoose');
 
 const RecruiterSchema = new mongoose.Schema({
@@ -7,4 +7,4 @@ const RecruiterSchema = new mongoose.Schema({
   position: { type: String }
 });
 
-module.exports = mongoose.model('Recruiter', RecruiterSchema);
+export default mongoose.model('Recruiter', RecruiterSchema);
