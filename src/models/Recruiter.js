@@ -6,4 +6,5 @@ const RecruiterSchema = new mongoose.Schema({
   position: { type: String }
 });
 
-export default mongoose.model('Recruiter', RecruiterSchema);
+const Recruiter = mongoose.model('Recruiter', RecruiterSchema);
+export default Recruiter;
