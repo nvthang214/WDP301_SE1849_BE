@@ -1,7 +1,6 @@
 import Category from "../models/Category.js";
 import Company from "../models/Company.js";
 import Job from "../models/Job.js";
-import Recruiter from "../models/Recruiter.js";
 import Role from "../models/Role.js";
 import User from "../models/User.js";
 

@@ -8,7 +8,7 @@ import {
   getUserById,
   toggleJobVisibility,
   updateUserRole,
-} from "../controllers/adminController.js";
+} from "../controllers/admin.controller.js";
 import { adminMiddleware } from "../middlewares/admin.middleware.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 

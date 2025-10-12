@@ -2,10 +2,27 @@
 import mongoose from 'mongoose';
 
 const JobSchema = new mongoose.Schema({
-  
-  title: { type: String, required: true },
+  company: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Company' 
+  },
+  recruiter: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
+  },
+  category: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Category' 
+  },
+  title: { 
+    type: String, 
+    required: true 
+  },
   description: { type: String },
-  tags: { type: String }, 
+  tags: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Tag'
+  },
   role: { type: String },
   minSalary: { type: Number },
   maxSalary: { type: Number },
@@ -20,14 +37,15 @@ const JobSchema = new mongoose.Schema({
   city: { type: String },
   remote: { type: Boolean, default: false },
   benefits: { type: [String] },
-  applyType: { type: String, default: "Jobpilot" },
-  company_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
-  recruiter_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Recruiter' },
+  applyType: { type: String, default: "Jobpilot" },  
   requirements: { type: String },
   desirable: { type: String },
   location: { type: String },
-  isActive: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now }
-});
+  isActive: { type: Boolean, default: true }
+},
+{ timestamps: true }
+);
+
+
 
 export default mongoose.model('Job', JobSchema);
