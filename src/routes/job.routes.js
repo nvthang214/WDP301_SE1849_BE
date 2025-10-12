@@ -7,8 +7,11 @@ import {
     // deleteJob,
     deactivateJob
 } from '../controllers/job.controllers.js';
-import {wrapAsync} from '../utils/handler.js';
+import { wrapAsync } from '../middlewares/error.middleware.js';
+import { authMiddleware} from '../middlewares/auth.middleware.js';
+
 const jobRoutes = express.Router();
+jobRoutes.use(authMiddleware);
 
 // get all jobs
 jobRoutes.get('/', wrapAsync(getAllJobs));

@@ -1,6 +1,7 @@
 import { MESSAGE } from '../constants/message.js';
+import ErrorResponse from '../lib/helper/ErrorResponse.js';
 import Job from '../models/Job.js';
-import { toResultOkWithMessage, toResultOkWithMessageAndData, toResultError } from '../results/Result.js';
+import { toResultOk } from '../results/Result.js';
 
 
 // get all jobs with search & filters & pagination
@@ -41,10 +42,10 @@ export const getAllJobs = async (req, res) => {
   const total = await Job.countDocuments(query);
 
   if (jobs.length === 0) {
-    return res.json(toResultError({ statusCode: 404, msg: MESSAGE.JOB_NOT_FOUND }));
+    throw new ErrorResponse(400, MESSAGE.JOB_FETCH_FAILED);
   }
   res.json(
-    toResultOkWithMessageAndData({
+    toResultOk({
       msg: MESSAGE.JOB_FETCH_SUCCESS,
       data: {
         jobs,
@@ -65,9 +66,9 @@ export const createJob = async (req, res) => {
   const newJob = new Job(req.body);
   const result = await newJob.save();
   if (!result) {
-    return res.json(toResultError({ statusCode: 500, msg: MESSAGE.JOB_CREATE_FAILED }));
+    throw new ErrorResponse(400, MESSAGE.JOB_CREATE_FAILED);
   }
-  res.json(toResultOkWithMessageAndData({ statusCode: 201, msg: MESSAGE.JOB_CREATE_SUCCESS, data: result }));
+  res.json(toResultOk({ statusCode: 201, msg: MESSAGE.JOB_CREATE_SUCCESS, data: result }));
 }
 
 // get job by id
@@ -75,9 +76,9 @@ export const getJobById = async (req, res) => {
   const { id } = req.params;
   const job = await Job.findById(id);
   if (!job) {
-    return res.json(toResultError({ statusCode: 404, msg: MESSAGE.JOB_NOT_FOUND }));
+    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
   }
-  res.json(toResultOkWithMessageAndData({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: job }));
+  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: job }));
 }
 
 // update job by id
@@ -85,9 +86,9 @@ export const updateJob = async (req, res) => {
   const { id } = req.params;
   const updatedJob = await Job.findByIdAndUpdate(id, req.body, { new: true });
   if (!updatedJob) {
-    return res.json(toResultError({ statusCode: 404, msg: MESSAGE.JOB_NOT_FOUND }));
+    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
   }
-  res.json(toResultOkWithMessageAndData({ msg: MESSAGE.JOB_UPDATE_SUCCESS, data: updatedJob })); 
+  res.json(toResultOk({ msg: MESSAGE.JOB_UPDATE_SUCCESS, data: updatedJob }));
 }
 
 // delete job by id
@@ -105,9 +106,9 @@ export const deactivateJob = async (req, res) => {
   const { id } = req.params;
   const job = await Job.findById(id);
   if (!job) {
-    return res.json(toResultError({ statusCode: 404, msg: MESSAGE.JOB_NOT_FOUND }));
+    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
   }
   job.isActive = false;
   await job.save();
-  res.json(toResultOkWithMessage({ msg: MESSAGE.JOB_DEACTIVATE_SUCCESS }));
+  res.json(toResultOk({ msg: MESSAGE.JOB_DEACTIVATE_SUCCESS }));
 }
