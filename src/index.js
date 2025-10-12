@@ -1,9 +1,9 @@
-import cors from "cors";
-import dotenv from "dotenv";
-import express from "express";
-import connectDB from "./databases/databaseConnect.js";
-import { errorHandler } from "./middlewares/error.middleware.js";
-import appRoutes from "./routes/app.routes.js";
+import cors from 'cors';
+import dotenv from 'dotenv';
+import express from 'express';
+import connectDB from './databases/databaseConnect.js';
+import { errorHandler } from './middlewares/error.middleware.js';
+import appRoutes from './routes/app.routes.js';
 
 dotenv.config();
 const app = express();
@@ -18,7 +18,7 @@ app.use(express.json());
 connectDB();
 
 // Routes
-app.use("/api", appRoutes);
+app.use('/api', appRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

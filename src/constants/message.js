@@ -28,6 +28,10 @@ export const MESSAGE = {
   REGISTER_FAILED: "Đăng ký thất bại",
   LOGOUT_FAILED: "Đăng xuất thất bại",
 
+  // THÔNG BÁO USER
+  USER_NOT_FOUND: "Người dùng không tồn tại",
+  USER_BANNED: "Tài khoản đã bị khóa",
+
   /////////////////////////////////////////////////////
   // THÔNG BÁO JOB
   JOB_NOT_FOUND: "Không tìm thấy công việc",

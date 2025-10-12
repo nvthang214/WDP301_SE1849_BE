@@ -1,12 +1,8 @@
-import { config } from "dotenv";
-import { jwtVerify } from "jose";
 import validator from "validator";
 import { MESSAGE } from "../constants/message.js";
 import ErrorResponse from "../lib/helper/ErrorResponse.js";
 import User from "../models/User.js";
-
-config();
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+import { verifyAccessToken } from "../utils/jwt.js";
 
 /**
  * Middleware xác thực JWT cho các route yêu cầu đăng nhập.
@@ -17,7 +13,7 @@ export const authMiddleware = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) throw new Error();
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await verifyAccessToken(token);
     req.user = payload;
     next();
   } catch (error) {
@@ -81,21 +77,25 @@ export const registerValidator = async (req, res, next) => {
  * Kiểm tra các trường bắt buộc và độ dài mật khẩu.
  */
 export const loginValidator = async (req, res, next) => {
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-  // Trim dữ liệu đầu vào
-  const trimmedUsername = username?.trim();
-  const trimmedPassword = password?.trim();
+    // Trim dữ liệu đầu vào
+    const trimmedUsername = username?.trim();
+    const trimmedPassword = password?.trim();
 
-  // Kiểm tra các trường bắt buộc
-  if (!trimmedUsername || !trimmedPassword) {
-    throw new ErrorResponse(400, MESSAGE.FIELD_REQUIRED);
+    // Kiểm tra các trường bắt buộc
+    if (!trimmedUsername || !trimmedPassword) {
+      throw new ErrorResponse(400, MESSAGE.FIELD_REQUIRED);
+    }
+
+    // Kiểm tra độ dài mật khẩu
+    if (trimmedPassword.length < 6) {
+      throw new ErrorResponse(400, MESSAGE.PASSWORD_TOO_SHORT);
+    }
+
+    next();
+  } catch (error) {
+    next(error);
   }
-
-  // Kiểm tra độ dài mật khẩu
-  if (trimmedPassword.length < 6) {
-    throw new ErrorResponse(400, MESSAGE.PASSWORD_TOO_SHORT);
-  }
-
-  next();
 };
