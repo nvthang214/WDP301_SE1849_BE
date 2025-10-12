@@ -1,7 +1,7 @@
 // app.routes.js
 import express from "express";
 const appRoutes = express.Router();
-
-appRoutes.use("/auth", () => {});
+import authRoutes from "./auth.routes.js";
+appRoutes.use("/auth", authRoutes);
 
 export default appRoutes;
