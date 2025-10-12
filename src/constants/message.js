@@ -48,6 +48,7 @@ export const MESSAGE = {
   JOB_DELETE_SUCCESS: "Xóa công việc thành công",
   JOB_DELETE_FAILED: "Xóa công việc thất bại",
   ////////////////////////////////////////////////////////
+<<<<<<< HEAD
   
   /////////////////////////////////////////////////////
   // THÔNG BÁO COMPANY
@@ -65,4 +66,13 @@ export const MESSAGE = {
   COMPANY_DELETE_SUCCESS: "Xóa công ty thành công",
   COMPANY_DELETE_FAILED: "Xóa công ty thất bại",
   ////////////////////////////////////////////////////////
+=======
+// THÔNG BÁO ỨNG TUYỂN & CV
+  APPLICATION_STATUS_FETCH_SUCCESS: " Trạng thái đậu ",
+  APPLICATION_STATUS_FETCH_FAILED: " Trạng thái rớt ",
+  CV_IMPORT_SUCCESS: " Tải CV thành công",
+  CV_IMPORT_FAILED: " Tải CV thất bại",
+  CV_DELETE_SUCCESS: " Xóa CV thành công",
+  CV_DELETE_FAILED: " Xóa CV thất bại",
+>>>>>>> c0d53f25993c5b4353596b92ebec198443884b7d
 };

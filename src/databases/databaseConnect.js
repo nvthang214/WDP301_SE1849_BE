@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 // db.js
+=======
+>>>>>>> c0d53f25993c5b4353596b92ebec198443884b7d
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { seedRoles } from "./seadingData.js";
@@ -17,4 +20,8 @@ const connectDB = async () => {
   }
 };
 
+<<<<<<< HEAD
 export default connectDB;
+=======
+export default connectDB;
+>>>>>>> c0d53f25993c5b4353596b92ebec198443884b7d

@@ -1,9 +1,18 @@
+<<<<<<< HEAD
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import connectDB from "./databases/databaseConnect.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import appRoutes from "./routes/app.routes.js";
+=======
+import cors from 'cors';
+import dotenv from 'dotenv';
+import express from 'express';
+import connectDB from './databases/databaseConnect.js';
+import { errorHandler } from './middlewares/error.middleware.js';
+import appRoutes from './routes/app.routes.js';
+>>>>>>> c0d53f25993c5b4353596b92ebec198443884b7d
 
 dotenv.config();
 const app = express();
@@ -18,7 +27,11 @@ app.use(express.json());
 connectDB();
 
 // Routes
+<<<<<<< HEAD
 app.use("/api", appRoutes);
+=======
+app.use('/api', appRoutes);
+>>>>>>> c0d53f25993c5b4353596b92ebec198443884b7d
 
 // Error handling middleware
 app.use(errorHandler);

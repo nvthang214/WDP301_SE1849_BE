@@ -1,7 +1,10 @@
 import Category from "../models/Category.js";
 import Company from "../models/Company.js";
 import Job from "../models/Job.js";
+<<<<<<< HEAD
 import Recruiter from "../models/Recruiter.js";
+=======
+>>>>>>> c0d53f25993c5b4353596b92ebec198443884b7d
 import Role from "../models/Role.js";
 import User from "../models/User.js";
 
