@@ -1,10 +1,15 @@
+// src/routes/job.routes.js
 import express from 'express';
-// import { getCandidatesInJob } from '../controllers/job.controller.js';
-// import { isAuth } from '../middlewares/auth.middleware.js';
+import { getCandidates } from '../controllers/candidate.controller.js';
+import { isAuth } from '../middlewares/auth.middleware.js';
 
-const jobRoutes = express.Router();
+const router = express.Router();
 
-// Recruiter can view, search, and filter candidates in a job
-// jobRoutes.get('/:jobId/candidates', isAuth, getCandidatesInJob);
+// @route   GET /api/jobs/:jobId/candidates
+// @desc    Get candidates for a specific job, with optional search and filter
+// @access  Private/Recruiter
+router.get('/:jobId/candidates', isAuth, getCandidates);
 
-export default jobRoutes;
+// Other job-related routes can be added here later
+
+export default router;

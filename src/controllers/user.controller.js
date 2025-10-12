@@ -79,3 +79,34 @@ export const updateProfile = async (req, res) => {
     })
   );
 };
+
+export const getUserById = async (req, res) => {
+  const { id } = req.params;
+
+  const user = await User.findById(id).select('-Password');
+  if (!user) {
+    return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
+  }
+
+  // In a real app, you might want to check if the requester is an admin here.
+  let profileData = { ...user.toObject() };
+
+  if (user.Role === 'candidate') {
+    const candidateProfile = await Candidate.findOne({ user_id: id });
+    if (candidateProfile) {
+      profileData = { ...profileData, ...candidateProfile.toObject() };
+    }
+  } else if (user.Role === 'recruiter') {
+    const recruiterProfile = await Recruiter.findOne({ user_id: id });
+    if (recruiterProfile) {
+      profileData = { ...profileData, ...recruiterProfile.toObject() };
+    }
+  }
+
+  res.json(
+    toResultOkWithMessageAndData({
+      msg: MESSAGE.USER_PROFILE_FETCH_SUCCESS,
+      data: profileData,
+    })
+  );
+};

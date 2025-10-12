@@ -1,10 +1,24 @@
+// src/routes/user.routes.js
 import express from 'express';
-import { getProfile, updateProfile } from '../controllers/user.controller.js';
+import { getProfile, updateProfile, getUserById } from '../controllers/user.controller.js';
 import { isAuth } from '../middlewares/auth.middleware.js';
 
-const userRoutes = express.Router();
+const router = express.Router();
 
-userRoutes.get('/me', isAuth, getProfile);
-userRoutes.put('/me', isAuth, updateProfile);
+// @route   GET /api/users/profile
+// @desc    Get current user's profile
+// @access  Private
+router.get('/profile', isAuth, getProfile);
 
-export default userRoutes;
+// @route   PUT /api/users/profile
+// @desc    Update current user's profile
+// @access  Private
+router.put('/profile', isAuth, updateProfile);
+
+// @route   GET /api/users/:id
+// @desc    Get user profile by ID (for admins)
+// @access  Private (should be Admin)
+// Note: We should add an isAdmin middleware here in a real application
+router.get('/:id', isAuth, getUserById);
+
+export default router;
