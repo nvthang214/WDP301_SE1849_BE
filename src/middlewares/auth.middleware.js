@@ -4,7 +4,6 @@ import validator from "validator";
 import { MESSAGE } from "../constants/message.js";
 import ErrorResponse from "../lib/helper/ErrorResponse.js";
 import User from "../models/User.js";
-import { toResultError } from "../results/Result.js";
 
 config();
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -26,6 +25,11 @@ export const authMiddleware = async (req, res, next) => {
   }
 };
 
+/**
+ * Middleware xác thực dữ liệu đầu vào khi đăng ký tài khoản.
+ * Kiểm tra các trường bắt buộc, định dạng email, độ dài mật khẩu,
+ * và kiểm tra trùng lặp email/username trong database.
+ */
 export const registerValidator = async (req, res, next) => {
   try {
     let { username, email, password, firstName, lastName } = req.body;
@@ -72,6 +76,10 @@ export const registerValidator = async (req, res, next) => {
   }
 };
 
+/**
+ * Middleware xác thực dữ liệu đầu vào khi đăng nhập.
+ * Kiểm tra các trường bắt buộc và độ dài mật khẩu.
+ */
 export const loginValidator = async (req, res, next) => {
   const { username, password } = req.body;
 
