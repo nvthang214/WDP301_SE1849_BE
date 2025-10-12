@@ -28,6 +28,10 @@ export const MESSAGE = {
   REGISTER_FAILED: "Đăng ký thất bại",
   LOGOUT_FAILED: "Đăng xuất thất bại",
 
+  // THÔNG BÁO USER
+  USER_NOT_FOUND: "Người dùng không tồn tại",
+  USER_BANNED: "Tài khoản đã bị khóa",
+
   /////////////////////////////////////////////////////
   // THÔNG BÁO JOB
   JOB_NOT_FOUND: "Không tìm thấy công việc",
@@ -44,4 +48,11 @@ export const MESSAGE = {
   JOB_DELETE_SUCCESS: "Xóa công việc thành công",
   JOB_DELETE_FAILED: "Xóa công việc thất bại",
   ////////////////////////////////////////////////////////
+// THÔNG BÁO ỨNG TUYỂN & CV
+  APPLICATION_STATUS_FETCH_SUCCESS: " Trạng thái đậu ",
+  APPLICATION_STATUS_FETCH_FAILED: " Trạng thái rớt ",
+  CV_IMPORT_SUCCESS: " Tải CV thành công",
+  CV_IMPORT_FAILED: " Tải CV thất bại",
+  CV_DELETE_SUCCESS: " Xóa CV thành công",
+  CV_DELETE_FAILED: " Xóa CV thất bại",
 };
