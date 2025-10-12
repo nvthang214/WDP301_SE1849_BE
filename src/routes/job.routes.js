@@ -11,7 +11,7 @@ import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
 
 const jobRoutes = express.Router();
-jobRoutes.use(authMiddleware);
+// jobRoutes.use(authMiddleware);
 
 // get all jobs
 jobRoutes.get('/', wrapAsync(getAllJobs));
