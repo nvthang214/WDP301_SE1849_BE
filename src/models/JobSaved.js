@@ -6,4 +6,5 @@ const JobSavedSchema = new mongoose.Schema({
   saved_at: { type: Date, default: Date.now }
 });
 
-export default mongoose.model('JobSaved', JobSavedSchema);
+const JobSaved = mongoose.model('JobSaved', JobSavedSchema);
+export default JobSaved;
