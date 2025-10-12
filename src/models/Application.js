@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-const mongoose = require('mongoose');
 
 const ApplicationSchema = new mongoose.Schema({
   candidate_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate', required: true },

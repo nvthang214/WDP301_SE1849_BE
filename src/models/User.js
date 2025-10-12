@@ -1,15 +1,67 @@
-import mongoose from 'mongoose';
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
-const UserSchema = new mongoose.Schema({
-  role_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Role', required: true },
-  Email: { type: String, required: true, maxlength: 108 },
-  Password: { type: String, required: true, maxlength: 50 },
-  Role: { type: String, required: true, maxlength: 20 },
-  phone_number: { type: String },
-  IsActive: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now },
-  FullName: { type: String, required: true, maxlength: 100 }
+const UserSchema = new mongoose.Schema(
+  {
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      maxlength: 108,
+      trim: true,
+      lowercase: true,
+    },
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      maxlength: 30,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    firstName: {
+      type: String,
+      required: true,
+      maxlength: 30,
+      trim: true,
+    },
+    lastName: {
+      type: String,
+      required: true,
+      maxlength: 30,
+      trim: true,
+    },
+    role: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role",
+      required: true,
+    },
+    phoneNumber: {
+      type: String,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    avatar: { type: String },
+  },
+  { timestamps: true }
+);
+
+// Hash password trước khi lưu
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
-export default mongoose.model('User', UserSchema);
+// So sánh mật khẩu
+UserSchema.methods.comparePassword = async function (candidate) {
+  return bcrypt.compare(candidate, this.password);
+};
+
+export default mongoose.model("User", UserSchema);

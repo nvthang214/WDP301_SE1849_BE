@@ -1,19 +1,22 @@
 import express from 'express';
-import { viewApplicationStatus, importCV, deleteCV, applyJob } from '../controllers/appstatus.controller.js';
-import authMiddleware from '../middlewares/auth.middleware.js';
+import { applyJob, viewApplicationStatus, importCV, deleteCV } from '../controllers/appstatus.controller.js';
+import { wrapAsync } from '../middlewares/error.middleware.js';
+import { authMiddleware} from '../middlewares/auth.middleware.js';
 
-const router = express.Router();
+const appstatusRoutes = express.Router();
 
-// Xem trạng thái của các đơn xin việc đã nộp
-router.get('/application-status', authMiddleware, viewApplicationStatus);
+// appstatusRoutes.use(authMiddleware);
 
-//Nhập CV mới để ứng tuyển
-router.post('/cv', authMiddleware, importCV);
+// Apply for a job
+appstatusRoutes.post('/apply', wrapAsync(applyJob));
 
-// Xóa CV hiện tại của user 
-router.delete('/cv', authMiddleware, deleteCV);
+// View application status for a candidate
+appstatusRoutes.get('/status/:candidate_id', wrapAsync(viewApplicationStatus));
 
-// Ứng viên nộp đơn ứng tuyển sử dụng CV đã tạo hoặc upload
-router.post('/apply', authMiddleware, applyJob);
+// Import/Create new CV
+appstatusRoutes.post('/cv/import', wrapAsync(importCV));
 
-export default router;
+// Delete existing CV
+appstatusRoutes.delete('/cv/delete', wrapAsync(deleteCV));
+
+export default appstatusRoutes;
