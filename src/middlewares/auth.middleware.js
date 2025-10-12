@@ -10,12 +10,6 @@ import { verifyAccessToken } from "../utils/jwt.js";
  * Nếu không hợp lệ, trả về lỗi 401 Unauthorized.
  */
 export const authMiddleware = async (req, res, next) => {
-<<<<<<< HEAD
-  try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) throw new Error();
-    const { payload } = await verifyAccessToken(token);
-=======
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return next(new ErrorResponse(401, MESSAGE.JWT_INVALID));
@@ -25,7 +19,6 @@ export const authMiddleware = async (req, res, next) => {
 
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
->>>>>>> c0d53f25993c5b4353596b92ebec198443884b7d
     req.user = payload;
     next();
   } catch (error) {
@@ -110,8 +103,4 @@ export const loginValidator = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> c0d53f25993c5b4353596b92ebec198443884b7d

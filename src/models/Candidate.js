@@ -1,8 +1,4 @@
 
-<<<<<<< HEAD
-
-=======
->>>>>>> c0d53f25993c5b4353596b92ebec198443884b7d
 import mongoose from 'mongoose';
 
 const CandidateSchema = new mongoose.Schema({

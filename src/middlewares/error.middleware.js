@@ -80,8 +80,4 @@ const wrapAsync = (func) => {
   };
 };
 
-<<<<<<< HEAD
 export { errorHandler, wrapAsync };
-=======
-export { errorHandler, wrapAsync };
->>>>>>> c0d53f25993c5b4353596b92ebec198443884b7d
