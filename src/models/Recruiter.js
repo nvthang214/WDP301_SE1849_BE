@@ -1,5 +1,4 @@
-
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const RecruiterSchema = new mongoose.Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -7,4 +6,4 @@ const RecruiterSchema = new mongoose.Schema({
   position: { type: String }
 });
 
-module.exports = mongoose.model('Recruiter', RecruiterSchema);
+export default mongoose.model('Recruiter', RecruiterSchema);

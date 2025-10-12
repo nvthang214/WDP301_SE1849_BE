@@ -1,5 +1,5 @@
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const JobAnalysisSchema = new mongoose.Schema({
   candidate_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate', required: true },
@@ -9,4 +9,4 @@ const JobAnalysisSchema = new mongoose.Schema({
   analysis_at: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('JobAnalysis', JobAnalysisSchema);
+export default mongoose.model('JobAnalysis', JobAnalysisSchema);

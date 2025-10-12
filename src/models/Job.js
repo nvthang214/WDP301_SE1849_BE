@@ -1,21 +1,33 @@
 
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const JobSchema = new mongoose.Schema({
-  company_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true },
-  recruiter_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Recruiter', required: true },
+  
   title: { type: String, required: true },
   description: { type: String },
+  tags: { type: String }, 
+  role: { type: String },
+  minSalary: { type: Number },
+  maxSalary: { type: Number },
+  salaryType: { type: String },
+  education: { type: String },
+  experience: { type: String },
+  jobType: { type: String },
+  vacancies: { type: Number },
+  expiration: { type: Date },
+  jobLevel: { type: String },
+  country: { type: String },
+  city: { type: String },
+  remote: { type: Boolean, default: false },
+  benefits: { type: [String] },
+  applyType: { type: String, default: "Jobpilot" },
+  company_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
+  recruiter_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Recruiter' },
   requirements: { type: String },
-  benefits: { type: String },
-  salary_min: { type: Number },
-  salary_max: { type: Number },
+  desirable: { type: String },
   location: { type: String },
-  job_type: { type: String },
-  experience_level: { type: String },
   isActive: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now },
-  category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' }
+  createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Job', JobSchema);
+export default mongoose.model('Job', JobSchema);
