@@ -34,7 +34,7 @@ export const getAllCompanies = async (req, res) => {
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const companies = await Company.find(query)
-    .populate('recruiter', 'firstName lastName email')
+    .populate('recruiter', 'firstName lastName email role')
     .skip(skip)
     .limit(parseInt(limit));
   const total = await Company.countDocuments(query);
@@ -61,18 +61,32 @@ export const getAllCompanies = async (req, res) => {
 
 // create new company
 export const createCompany = async (req, res) => {
-  const newCompany = new Company(req.body);
+  // Get user ID from auth middleware (nếu có) hoặc để null nếu không có auth
+  const userId = req.user?.id || null;
+  
+  // Add recruiter field với user ID (có thể null)
+  const companyData = {
+    ...req.body,
+    recruiter: userId
+  };
+  
+  const newCompany = new Company(companyData);
   const result = await newCompany.save();
   if (!result) {
     throw new ErrorResponse(400, MESSAGE.COMPANY_CREATE_FAILED);
   }
-  res.json(toResultOk({ statusCode: 201, msg: MESSAGE.COMPANY_CREATE_SUCCESS, data: result }));
+  
+  // Populate recruiter data before sending response
+  const populatedCompany = await Company.findById(result._id)
+    .populate('recruiter', 'firstName lastName email role');
+    
+  res.json(toResultOk({ statusCode: 201, msg: MESSAGE.COMPANY_CREATE_SUCCESS, data: populatedCompany }));
 }
 
 // get company by id
 export const getCompanyById = async (req, res) => {
   const { id } = req.params;
-  const company = await Company.findById(id).populate('recruiter', 'firstName lastName email');
+  const company = await Company.findById(id).populate('recruiter', 'firstName lastName email role');
   if (!company) {
     throw new ErrorResponse(404, MESSAGE.COMPANY_NOT_FOUND);
   }
@@ -83,7 +97,7 @@ export const getCompanyById = async (req, res) => {
 export const updateCompany = async (req, res) => {
   const { id } = req.params;
   const updatedCompany = await Company.findByIdAndUpdate(id, req.body, { new: true })
-    .populate('recruiter', 'firstName lastName email');
+    .populate('recruiter', 'firstName lastName email role');
   if (!updatedCompany) {
     throw new ErrorResponse(404, MESSAGE.COMPANY_NOT_FOUND);
   }
@@ -104,7 +118,7 @@ export const deleteCompany = async (req, res) => {
 export const getCompaniesByRecruiter = async (req, res) => {
   const { recruiterId } = req.params;
   const companies = await Company.find({ recruiter: recruiterId })
-    .populate('recruiter', 'firstName lastName email');
+    .populate('recruiter', 'firstName lastName email role');
   
   if (companies.length === 0) {
     throw new ErrorResponse(404, MESSAGE.COMPANY_NOT_FOUND);
