@@ -6,7 +6,7 @@ import {
     updateJob,
     // deleteJob,
     deactivateJob
-} from '../controllers/job.controller.js';
+} from '../controllers/job.controllers.js';
 import { getCandidates } from '../controllers/candidate.controller.js'; // Import getCandidates
 import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
