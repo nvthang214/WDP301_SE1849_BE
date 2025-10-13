@@ -55,4 +55,21 @@ export const MESSAGE = {
   CV_IMPORT_FAILED: " Tải CV thất bại",
   CV_DELETE_SUCCESS: " Xóa CV thành công",
   CV_DELETE_FAILED: " Xóa CV thất bại",
+  
+  /////////////////////////////////////////////////////
+  // THÔNG BÁO COMPANY
+  COMPANY_NOT_FOUND: "Không tìm thấy công ty",
+  // CREATE COMPANY
+  COMPANY_CREATE_SUCCESS: "Tạo công ty thành công",
+  COMPANY_CREATE_FAILED: "Tạo công ty thất bại",
+  // FETCH COMPANIES
+  COMPANY_FETCH_SUCCESS: "Lấy danh sách công ty thành công",
+  COMPANY_FETCH_FAILED: "Lấy danh sách công ty thất bại",
+  // UPDATE COMPANY
+  COMPANY_UPDATE_SUCCESS: "Cập nhật công ty thành công",
+  COMPANY_UPDATE_FAILED: "Cập nhật công ty thất bại",
+  // DELETE COMPANY
+  COMPANY_DELETE_SUCCESS: "Xóa công ty thành công",
+  COMPANY_DELETE_FAILED: "Xóa công ty thất bại",
+  ////////////////////////////////////////////////////////
 };
