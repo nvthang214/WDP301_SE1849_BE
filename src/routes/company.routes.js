@@ -11,7 +11,7 @@ import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
 
 const companyRoutes = express.Router();
-// companyRoutes.use(authMiddleware); 
+companyRoutes.use(authMiddleware); 
 
 // get all companies
 companyRoutes.get('/', wrapAsync(getAllCompanies));
