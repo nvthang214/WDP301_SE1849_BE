@@ -1,12 +1,11 @@
 import Application from '../models/Application.js';
-import Candidate from '../models/Candidate.js';
+import User from '../models/User.js';
 import Job from '../models/Job.js';
-import mongoose from 'mongoose';
 
 // Apply for a job using a created or uploaded CV
 export const applyJob = async (req, res) => {
 	try {
-		const { job_id, candidate_id, cv } = req.body;
+		const { job_id, candidate_id, resume, coverLetter } = req.body;
 		if (!job_id || !candidate_id) {
 			return res.status(400).json({ message: 'Missing job_id or candidate_id' });
 		}
@@ -14,13 +13,10 @@ export const applyJob = async (req, res) => {
 		const job = await Job.findById(job_id);
 		if (!job) return res.status(404).json({ message: 'Job not found' });
 		// Check if candidate exists
-		const candidate = await Candidate.findById(candidate_id);
+		const candidate = await User.findById(candidate_id);
 		if (!candidate) return res.status(404).json({ message: 'Candidate not found' });
 		// Optionally update candidate CV
-		if (cv) {
-			candidate.cv = cv;
-			await candidate.save();
-		}
+		
 		// Check if already applied
 		const exist = await Application.findOne({ candidate_id, job_id });
 		if (exist) return res.status(409).json({ message: 'Already applied' });
@@ -50,7 +46,7 @@ export const importCV = async (req, res) => {
 	try {
 		const { candidate_id, cv } = req.body;
 		if (!candidate_id || !cv) return res.status(400).json({ message: 'Missing candidate_id or cv' });
-		const candidate = await Candidate.findById(candidate_id);
+		const candidate = await User.findById(candidate_id);
 		if (!candidate) return res.status(404).json({ message: 'Candidate not found' });
 		candidate.cv = cv;
 		await candidate.save();
@@ -65,7 +61,7 @@ export const deleteCV = async (req, res) => {
 	try {
 		const { candidate_id } = req.body;
 		if (!candidate_id) return res.status(400).json({ message: 'Missing candidate_id' });
-		const candidate = await Candidate.findById(candidate_id);
+		const candidate = await User.findById(candidate_id);
 		if (!candidate) return res.status(404).json({ message: 'Candidate not found' });
 		candidate.cv = undefined;
 		await candidate.save();
