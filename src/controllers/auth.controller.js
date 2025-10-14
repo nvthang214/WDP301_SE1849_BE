@@ -1,19 +1,19 @@
-import { config } from 'dotenv';
-import { MESSAGE } from '../constants/message.js';
-import { TOKEN_EXPIRATION } from '../constants/variable.js';
-import ErrorResponse from '../lib/helper/ErrorResponse.js';
-import Role from '../models/Role.js';
-import User from '../models/User.js';
-import { toResultOk } from '../results/Result.js';
+import { config } from "dotenv";
+import { MESSAGE } from "../constants/message.js";
+import { TOKEN_EXPIRATION } from "../constants/variable.js";
+import ErrorResponse from "../lib/helper/ErrorResponse.js";
+import Role from "../models/Role.js";
+import User from "../models/User.js";
+import { toResultOk } from "../results/Result.js";
 import {
   createResetToken,
   generateAccessToken,
   generateRefreshToken,
   verifyGoogleToken,
   verifyRefreshToken,
-} from '../utils/jwt.js';
-import { mailOptions } from '../utils/mailOption.js';
-import sendMail from '../utils/sendMail.js';
+} from "../utils/jwt.js";
+import { mailOptions } from "../utils/mailOption.js";
+import sendMail from "../utils/sendMail.js";
 config();
 
 /**
@@ -23,7 +23,7 @@ config();
  */
 export const registerController = async (req, res) => {
   let { username, email, password, firstName, lastName } = req.body;
-  const role = await Role.findOne({ name: 'candidate' });
+  const role = await Role.findOne({ name: "candidate" });
   const newUser = new User({
     role: role._id,
     username,
@@ -59,15 +59,15 @@ export const loginController = async (req, res) => {
   const accessToken = await generateAccessToken(payload);
   const refreshToken = await generateRefreshToken(payload);
 
-  const days = Number(TOKEN_EXPIRATION.REFRESH_EXPIRES.split('d')[0]);
+  const days = Number(TOKEN_EXPIRATION.REFRESH_EXPIRES.split("d")[0]);
   const refreshTokenExpiry = 1000 * 60 * 60 * 24 * days;
 
-  res.cookie('refreshToken', refreshToken, {
+  res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: true,
-    path: '/',
+    path: "/",
     maxAge: refreshTokenExpiry,
-    sameSite: 'Strict',
+    sameSite: "Strict",
   });
   return res.status(200).json(
     toResultOk({
@@ -119,10 +119,10 @@ export const forgotPasswordController = async (req, res) => {
   // Tạo token reset
   const token = await createResetToken(user._id.toString());
   // Link reset
-  const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
+  const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
   const option = mailOptions(
     email,
-    'Đặt lại mật khẩu',
+    "Đặt lại mật khẩu",
     `Nhấn vào link sau để đặt lại mật khẩu: ${resetLink}`
   );
   // Gửi mail
@@ -169,11 +169,11 @@ export const changePasswordController = async (req, res) => {
 
 export const logoutController = (req, res) => {
   // Xóa refresh token khỏi cookie
-  res.clearCookie('refreshToken', {
+  res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: true,
-    sameSite: 'Strict',
-    path: '/',
+    sameSite: "Strict",
+    path: "/",
   });
 
   return res.status(200).json(
@@ -208,15 +208,15 @@ export const oauthGoogleLoginController = async (req, res) => {
     const accessToken = await generateAccessToken(jwtPayload);
     const refreshToken = await generateRefreshToken(jwtPayload);
 
-    const days = Number(TOKEN_EXPIRATION.REFRESH_EXPIRES.split('d')[0]);
+    const days = Number(TOKEN_EXPIRATION.REFRESH_EXPIRES.split("d")[0]);
     const refreshTokenExpiry = 1000 * 60 * 60 * 24 * days;
 
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
-      path: '/',
+      path: "/",
       maxAge: refreshTokenExpiry,
-      sameSite: 'Strict',
+      sameSite: "Strict",
     });
 
     return res.status(200).json(
