@@ -1,6 +1,4 @@
 import User from '../models/User.js';
-import Candidate from '../models/Candidate.js';
-import Recruiter from '../models/Recruiter.js';
 import { MESSAGE } from '../constants/message.js';
 import { toResultOk, toResultError } from '../results/Result.js';
 
