@@ -17,6 +17,6 @@ appstatusRoutes.get('/status/:candidate_id', wrapAsync(viewApplicationStatus));
 appstatusRoutes.post('/cv/import', wrapAsync(importCV));
 
 // Delete existing CV
-appstatusRoutes.delete('/cv/delete', wrapAsync(deleteCV));
+appstatusRoutes.delete('/cv/delete/:candidate_id', wrapAsync(deleteCV));
 
 export default appstatusRoutes;

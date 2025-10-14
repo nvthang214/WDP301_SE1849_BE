@@ -19,7 +19,7 @@ const JobSchema = new mongoose.Schema({
   },
   description: { type: String },
   tags: { 
-    type: mongoose.Schema.Types.ObjectId, 
+    type: [mongoose.Schema.Types.ObjectId], 
     ref: 'Tag'
   },
   role: { type: String },
@@ -28,7 +28,11 @@ const JobSchema = new mongoose.Schema({
   salaryType: { type: String },
   education: { type: String },
   experience: { type: String },
-  jobType: { type: String },
+  jobType: { 
+    type: String, 
+    default: "FULL-TIME", 
+    enum: ["FULL-TIME", "PART-TIME", "CONTRACT", "TEMPORARY", "INTERNSHIP", "VOLUNTEER", "OTHER"] 
+  },
   vacancies: { type: Number },
   expiration: { type: Date },
   jobLevel: { type: String },
