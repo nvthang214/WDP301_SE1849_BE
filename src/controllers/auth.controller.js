@@ -24,6 +24,12 @@ config();
 export const registerController = async (req, res) => {
   let { username, email, password, firstName, lastName } = req.body;
   const role = await Role.findOne({ name: 'candidate' });
+  
+  // Kiểm tra nếu role không tồn tại
+  if (!role) {
+    throw new ErrorResponse(500, 'Role "candidate" not found. Please run database seeding first.');
+  }
+  
   const newUser = new User({
     role: role._id,
     username,

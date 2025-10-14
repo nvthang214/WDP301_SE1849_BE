@@ -1,10 +1,12 @@
 // app.routes.js
 import express from "express";
 import jobRoutes from "./job.routes.js";
+import tagRoutes from "./tag.routes.js";
+import categoryRoutes from "./category.routes.js";
+import companyRoutes from "./company.routes.js";
 import authRoutes from "./auth.routes.js";
 import adminRoutes from "./admin.routes.js";
 import appstatusRoutes from "./appstatus.routes.js";
-import companyRoutes from "./company.routes.js";
 
 
 const appRoutes = express.Router();
@@ -16,12 +18,22 @@ import candidateRoutes from './candidate.routes.js';
 
 
 // appRoutes.use("/auth", authRoutes);
-appRoutes.use('/users', userRoutes);
-appRoutes.use('/applications', applicationRoutes);
-appRoutes.use('/candidates', candidateRoutes);
-appRoutes.use('/jobs', jobRoutes);
 appRoutes.use("/auth", authRoutes);
 
+appRoutes.use('/users', userRoutes);
+
+appRoutes.use('/applications', applicationRoutes);
+
+appRoutes.use('/candidates', candidateRoutes);
+
+// Job routes
+appRoutes.use('/jobs', jobRoutes);
+// Tag routes
+appRoutes.use('/tags', tagRoutes);
+// Category routes
+appRoutes.use('/categories', categoryRoutes);
+// Company routes
+appRoutes.use('/companies', companyRoutes);
 
 // Admin routes
 appRoutes.use("/admin", adminRoutes);
