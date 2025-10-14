@@ -118,15 +118,3 @@ export const deleteCompany = async (req, res) => {
   }
   res.json(toResultOk({ msg: MESSAGE.COMPANY_DELETE_SUCCESS }));
 }
-
-// get companies by recruiter id
-export const getCompaniesByRecruiter = async (req, res) => {
-  const { recruiterId } = req.params;
-  const companies = await Company.find({ recruiter: recruiterId })
-    .populate('recruiter', 'firstName lastName email role');
-  
-  if (companies.length === 0) {
-    throw new ErrorResponse(404, MESSAGE.COMPANY_NOT_FOUND);
-  }
-  res.json(toResultOk({ msg: MESSAGE.COMPANY_FETCH_SUCCESS, data: companies }));
-}

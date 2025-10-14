@@ -4,8 +4,7 @@ import {
     createCompany,
     getCompanyById,
     updateCompany,
-    deleteCompany,
-    getCompaniesByRecruiter
+    deleteCompany
 } from '../controllers/company.controller.js';
 import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
@@ -23,7 +22,5 @@ companyRoutes.get('/:id', wrapAsync(getCompanyById));
 companyRoutes.put('/edit/:id', wrapAsync(updateCompany));
 // delete company by id
 companyRoutes.delete('/:id', wrapAsync(deleteCompany));
-// get companies by recruiter id
-companyRoutes.get('/recruiter/:recruiterId', wrapAsync(getCompaniesByRecruiter));
 
 export default companyRoutes;
