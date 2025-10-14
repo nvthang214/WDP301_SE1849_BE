@@ -5,20 +5,15 @@ import Job from '../models/Job.js';
 import { toResultOk } from '../results/Result.js';
 
 
-// get all jobs with search & filters & pagination
 export const getAllJobs = async (req, res) => {
-  const { search, jobType, experience, isActive, location, page = 1, limit = 15, minSalary, maxSalary } = req.query;
+  const { search, categoryId, jobType, experience, isActive, location, page = 1, limit = 15, minSalary, maxSalary, remote } = req.query;
 
   let query = {};
 
   if (search) {
-    // Tìm các tag có tên khớp với search
     const tags = await Tag.find({ name: { $regex: search, $options: 'i' } }).select('_id');
     const tagIds = tags.map(tag => tag._id);
-    if (tagIds.length < 0) {
-      return res.json("No jobs found");
-    }
-    
+
     query.$or = [
       { title: { $regex: search, $options: 'i' } },
       { location: { $regex: search, $options: 'i' } },
@@ -26,12 +21,13 @@ export const getAllJobs = async (req, res) => {
       { tags: { $in: tagIds } }
     ];
   }
+  if (categoryId) query.category = categoryId;
   if (jobType) query.jobType = jobType;
   if (experience) query.experience = experience;
   if (isActive !== undefined) query.isActive = isActive === 'true';
   if (location) query.location = { $regex: location, $options: 'i' };
+  if (remote !== undefined) query.remote = remote === 'true';
 
-  // Filter theo min/max salary
   if (minSalary || maxSalary) {
     query.$and = query.$and || [];
     if (minSalary) {
@@ -52,12 +48,12 @@ export const getAllJobs = async (req, res) => {
     .skip(skip)
     .limit(parseInt(limit))
     .populate({ path: 'recruiter', select: 'firstName lastName -_id' })
+    .populate({ path: 'category', select: 'name' })
     .populate({ path: 'company', select: 'name -_id' })
     .populate({ path: 'tags', select: 'name -_id' });
 
   const total = await Job.countDocuments(query);
 
-  // Trả về mảng rỗng nếu không có job nào
   res.json(
     toResultOk({
       msg: MESSAGE.JOB_FETCH_SUCCESS,
@@ -90,6 +86,7 @@ export const getJobById = async (req, res) => {
   const { id } = req.params;
   const job = await Job.findById(id)
     .populate({ path: 'recruiter', select: 'username firstName lastName -_id' })
+    .populate({ path: 'category', select: 'name' })
     .populate({ path: 'company', select: 'name' })
     .populate({ path: 'tags', select: 'name' });
   if (!job) {

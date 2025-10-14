@@ -2,6 +2,7 @@
 import express from "express";
 import jobRoutes from "./job.routes.js";
 import tagRoutes from "./tag.routes.js";
+import categoryRoutes from "./category.routes.js";
 import companyRoutes from "./company.routes.js";
 import authRoutes from "./auth.routes.js";
 import adminRoutes from "./admin.routes.js";
@@ -28,6 +29,8 @@ appRoutes.use('/candidates', candidateRoutes);
 appRoutes.use('/jobs', jobRoutes);
 // Tag routes
 appRoutes.use('/tags', tagRoutes);
+// Category routes
+appRoutes.use('/categories', categoryRoutes);
 // Company routes
 appRoutes.use('/companies', companyRoutes);
 

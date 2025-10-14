@@ -9,7 +9,10 @@ dotenv.config();
 const app = express();
 
 // Middleware setup
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
 
 // Parse JSON bodies
 app.use(express.json());
