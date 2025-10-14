@@ -1,5 +1,5 @@
 import Application from "../models/Application.js";
-import Candidate from "../models/Candidate.js";
+import User from "../models/User.js";
 import Job from "../models/Job.js";
 import { toResultOk, toResultError } from "../results/Result.js";
 import { MESSAGE } from "../constants/message.js";
@@ -79,7 +79,7 @@ export const importCV = async (req, res) => {
         .json(toResultError({ statusCode: 400, msg: MESSAGE.VALIDATION_ERROR }));
     }
 
-    const candidate = await Candidate.findById(candidateId);
+    const candidate = await User.findById(candidateId);
     if (!candidate) {
       return res
         .status(404)
@@ -108,7 +108,7 @@ export const deleteCV = async (req, res) => {
   try {
     const { candidate_id } = req.params;
 
-    const candidate = await Candidate.findById(candidate_id);
+    const candidate = await User.findById(candidate_id);
     if (!candidate) {
       return res
         .status(404)
