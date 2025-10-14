@@ -1,62 +1,49 @@
 import { MESSAGE } from '../constants/message.js';
 import ErrorResponse from '../lib/helper/ErrorResponse.js';
-import Company from '../models/Company.js';
 import { toResultOk } from '../results/Result.js';
+import Company from '../models/Company.js';
+import Job from '../models/Job.js';
 
-// get all companies with search & filters & pagination
-export const getAllCompanies = async (req, res) => {
-  const { search, industry, teamSize, page = 1, limit = 15 } = req.query;
 
-  // query object
-  let query = {};
 
-  if (search) {
-    query.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i' } },
-      { industry: { $regex: search, $options: 'i' } },
-      { address: { $regex: search, $options: 'i' } }
-    ];
-  }
-  if (industry) query.industry = { $regex: industry, $options: 'i' };
-  if (teamSize) {
-    const teamSizeNum = parseInt(teamSize);
-    if (teamSizeNum <= 10) {
-      query.teamSize = { $lte: 10 };
-    } else if (teamSizeNum <= 50) {
-      query.teamSize = { $gt: 10, $lte: 50 };
-    } else if (teamSizeNum <= 200) {
-      query.teamSize = { $gt: 50, $lte: 200 };
-    } else {
-      query.teamSize = { $gt: 200 };
+
+
+// Get open all job for a company with search & filters & pagination
+export const getAllJobsForCompany = async (req, res) => {
+  const { companyId } = req.params;
+    const { search, isActive, location, page = 1, limit = 15 } = req.query;
+    // query object
+    let query = { company: companyId };
+    if (search) {
+        query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { location: { $regex: search, $options: 'i' } }
+      ];
     }
-  }
-
-  const skip = (parseInt(page) - 1) * parseInt(limit);
-  const companies = await Company.find(query)
-    .populate('recruiter', 'firstName lastName email role')
-    .skip(skip)
-    .limit(parseInt(limit));
-  const total = await Company.countDocuments(query);
-
-  if (companies.length === 0) {
-    throw new ErrorResponse(400, MESSAGE.COMPANY_FETCH_FAILED);
-  }
-  res.json(
-    toResultOk({
-      msg: MESSAGE.COMPANY_FETCH_SUCCESS,
-      data: {
-        companies,
-        totalPages: Math.ceil(total / limit)
-      },
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(total / limit)
-      }
-    })
-  );
+    if (isActive !== undefined) query.isActive = isActive === 'true';
+    if (location) query.location = { $regex: location, $options: 'i' }; 
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const jobs = await Job.find(query).skip(skip).limit(parseInt(limit));
+    const total = await Job.countDocuments(query);
+    if (jobs.length === 0) {
+      throw new ErrorResponse(400, MESSAGE.JOB_FETCH_FAILED);
+    }
+    res.json(
+      toResultOk({
+        msg: MESSAGE.JOB_FETCH_SUCCESS,
+        data: {
+            jobs,
+            totalPages: Math.ceil(total / limit)
+        },
+        pagination: {
+            total,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalPages: Math.ceil(total / limit)
+        }
+      })
+    );
 }
 
 // create new company

@@ -59,6 +59,36 @@ export const MESSAGE = {
   // DELETE JOB
   JOB_DELETE_SUCCESS: "Xóa công việc thành công",
   JOB_DELETE_FAILED: "Xóa công việc thất bại",
+  // DEACTIVATE JOB
+  JOB_DEACTIVATE_SUCCESS: "Hủy kích hoạt công việc thành công",
+  JOB_DEACTIVATE_FAILED: "Hủy kích hoạt công việc thất bại",
+
+  /////////////////////////////////////////////////////
+  // THÔNG BÁO TAG
+  TAG_NOT_FOUND: "Không tìm thấy thẻ",
+  // FETCH TAGS
+  TAG_FETCH_SUCCESS: "Lấy danh sách thẻ thành công",
+  TAG_FETCH_FAILED: "Lấy danh sách thẻ thất bại",
+  // CREATE TAG
+  TAG_CREATE_SUCCESS: "Tạo thẻ thành công",
+  TAG_CREATE_FAILED: "Tạo thẻ thất bại",
+
+  /////////////////////////////////////////////////////
+  // THÔNG BÁO COMPANY
+  COMPANY_NOT_FOUND: "Không tìm thấy công ty",
+  COMPANY_FETCH_SUCCESS: "Lấy thông tin công ty thành công",
+  COMPANY_FETCH_FAILED: "Lấy thông tin công ty thất bại",
+
+  /////////////////////////////////////////////////////
+  // THÔNG BÁO CATEGORY
+  CATEGORY_NOT_FOUND: "Không tìm thấy danh mục",
+  // FETCH CATEGORIES
+  CATEGORY_FETCH_SUCCESS: "Lấy danh sách danh mục thành công",
+  CATEGORY_FETCH_FAILED: "Lấy danh sách danh mục thất bại",
+  // CREATE CATEGORY
+  CATEGORY_CREATE_SUCCESS: "Tạo danh mục thành công",
+  CATEGORY_CREATE_FAILED: "Tạo danh mục thất bại",
+
   ////////////////////////////////////////////////////////
   // THÔNG BÁO ỨNG TUYỂN & CV
   APPLICATION_STATUS_FETCH_SUCCESS: " Trạng thái đậu ",
