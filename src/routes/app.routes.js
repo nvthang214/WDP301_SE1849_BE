@@ -7,6 +7,7 @@ import companyRoutes from "./company.routes.js";
 import authRoutes from "./auth.routes.js";
 import adminRoutes from "./admin.routes.js";
 import appstatusRoutes from "./appstatus.routes.js";
+import companyRoutes from "./company.routes.js";
 
 
 const appRoutes = express.Router();
@@ -36,10 +37,7 @@ appRoutes.use('/companies', companyRoutes);
 
 // Admin routes
 appRoutes.use("/admin", adminRoutes);
-appRoutes.use("/status", appstatusRoutes);
-
-
-
-
+appRoutes.use("/applications", appstatusRoutes);
+appRoutes.use("/companies", companyRoutes);
 
 export default appRoutes;
