@@ -17,6 +17,8 @@ const jobRoutes = express.Router();
 jobRoutes.get('/', wrapAsync(getAllJobs));
 // create new job
 jobRoutes.post('/post', wrapAsync(createJob));
+
+
 // get job by id
 jobRoutes.get('/:id', wrapAsync(getJobById));
 // update job by id
