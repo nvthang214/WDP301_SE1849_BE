@@ -5,7 +5,8 @@ import {
     getJobById,
     updateJob,
     // deleteJob,
-    deactivateJob
+    deactivateJob,
+    getJobsByRecruiterId
 } from '../controllers/job.controller.js';
 import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
@@ -26,5 +27,7 @@ jobRoutes.put('/edit/:id', wrapAsync(updateJob));
 // deactivate job by id
 jobRoutes.patch('/deactivate/:id', wrapAsync(deactivateJob));
 
+// get jobs by recruiter id
+jobRoutes.get('/recruiter/:recruiterId', wrapAsync(getJobsByRecruiterId));
 
 export default jobRoutes;

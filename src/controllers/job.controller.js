@@ -126,3 +126,10 @@ export const deactivateJob = async (req, res) => {
   await job.save();
   res.json(toResultOk({ msg: MESSAGE.JOB_DEACTIVATE_SUCCESS }));
 }
+
+// get jobs by recruiter id
+export const getJobsByRecruiterId = async (req, res) => {
+  const { recruiterId } = req.params;
+  const jobs = await Job.find({ recruiter: recruiterId });
+  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobs }));
+}
