@@ -76,9 +76,14 @@ export const createCompany = async (req, res) => {
     throw new ErrorResponse(400, MESSAGE.COMPANY_CREATE_FAILED);
   }
   
-  // Populate recruiter data before sending response
-  const populatedCompany = await Company.findById(result._id)
-    .populate('recruiter', 'firstName lastName email role');
+  // Populate recruiter data before sending response (only if recruiter exists)
+  let populatedCompany;
+  if (userId) {
+    populatedCompany = await Company.findById(result._id)
+      .populate('recruiter', 'firstName lastName email role');
+  } else {
+    populatedCompany = await Company.findById(result._id);
+  }
     
   res.json(toResultOk({ statusCode: 201, msg: MESSAGE.COMPANY_CREATE_SUCCESS, data: populatedCompany }));
 }

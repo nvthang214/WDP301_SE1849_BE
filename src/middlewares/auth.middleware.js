@@ -19,6 +19,7 @@ export const authMiddleware = async (req, res, next) => {
 
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
+    
     req.user = payload;
     next();
   } catch (error) {
