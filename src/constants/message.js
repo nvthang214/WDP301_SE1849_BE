@@ -44,32 +44,6 @@ export const MESSAGE = {
   FORGOT_PASSWORD_BODY:
     "Bạn đã yêu cầu lấy lại mật khẩu. Vui lòng kiểm tra email để đặt lại mật khẩu.",
 
-  /////////////////////////////////////////////////////
-  // THÔNG BÁO CANDIDATE DASHBOARD & SETTINGS
-  CANDIDATE_APPLIED_JOBS_FETCH_SUCCESS: "Lấy danh sách việc đã ứng tuyển thành công",
-  CANDIDATE_APPLIED_JOBS_FETCH_FAILED: "Lấy danh sách việc đã ứng tuyển thất bại",
-  CANDIDATE_SETTINGS_PERSONAL_FETCH_SUCCESS: "Lấy thông tin cá nhân thành công",
-  CANDIDATE_SETTINGS_PERSONAL_FETCH_FAILED: "Lấy thông tin cá nhân thất bại",
-  CANDIDATE_SETTINGS_PERSONAL_UPDATE_SUCCESS: "Cập nhật thông tin cá nhân thành công",
-  CANDIDATE_SETTINGS_PERSONAL_UPDATE_FAILED: "Cập nhật thông tin cá nhân thất bại",
-  CANDIDATE_RESUME_CREATE_SUCCESS: "Thêm CV thành công",
-  CANDIDATE_RESUME_CREATE_FAILED: "Thêm CV thất bại",
-  CANDIDATE_RESUME_UPDATE_SUCCESS: "Cập nhật CV thành công",
-  CANDIDATE_RESUME_UPDATE_FAILED: "Cập nhật CV thất bại",
-  CANDIDATE_RESUME_DELETE_SUCCESS: "Xóa CV thành công",
-  CANDIDATE_RESUME_DELETE_FAILED: "Xóa CV thất bại",
-  RESUME_NOT_FOUND: "Không tìm thấy CV",
-  CANDIDATE_SETTINGS_PROFILE_FETCH_SUCCESS: "Lấy thông tin hồ sơ thành công",
-  CANDIDATE_SETTINGS_PROFILE_FETCH_FAILED: "Lấy thông tin hồ sơ thất bại",
-  CANDIDATE_SETTINGS_PROFILE_UPDATE_SUCCESS: "Cập nhật thông tin hồ sơ thành công",
-  CANDIDATE_SETTINGS_PROFILE_UPDATE_FAILED: "Cập nhật thông tin hồ sơ thất bại",
-  CANDIDATE_SETTINGS_SOCIAL_FETCH_SUCCESS: "Lấy liên kết mạng xã hội thành công",
-  CANDIDATE_SETTINGS_SOCIAL_FETCH_FAILED: "Lấy liên kết mạng xã hội thất bại",
-  CANDIDATE_SETTINGS_SOCIAL_UPDATE_SUCCESS: "Cập nhật liên kết mạng xã hội thành công",
-  CANDIDATE_SETTINGS_SOCIAL_UPDATE_FAILED: "Cập nhật liên kết mạng xã hội thất bại",
-  CANDIDATE_NOT_FOUND: "Không tìm thấy ứng viên",
-  INVALID_RESUME_PAYLOAD: "Dữ liệu CV không hợp lệ",
-  INVALID_SOCIAL_LINK_PAYLOAD: "Dữ liệu liên kết mạng xã hội không hợp lệ",
 
   /////////////////////////////////////////////////////
   // THÔNG BÁO JOB
