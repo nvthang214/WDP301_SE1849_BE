@@ -1,8 +1,8 @@
 export const TOKEN_EXPIRATION = {
-  ACCESS_EXPIRES: "15m",
-  REFRESH_EXPIRES: "30d",
-  EMAIL_EXPIRES: "1d",
-  RESET_EXPIRES: "1h",
+  ACCESS_EXPIRES: '15m',
+  REFRESH_EXPIRES: '30d',
+  EMAIL_EXPIRES: '1d',
+  RESET_EXPIRES: '5m',
 };
 
 export const STATUS_CODE = {
