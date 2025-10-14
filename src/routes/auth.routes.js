@@ -1,5 +1,5 @@
 // auth.routes.js
-import express from 'express';
+import express from "express";
 import {
   changePasswordController,
   forgotPasswordController,
@@ -9,7 +9,7 @@ import {
   refreshController,
   registerController,
   resetPasswordController,
-} from '../controllers/auth.controller.js';
+} from "../controllers/auth.controller.js";
 import {
   authMiddleware,
   changePasswordValidator,
@@ -17,41 +17,41 @@ import {
   loginValidator,
   registerValidator,
   resetPasswordValidator,
-} from '../middlewares/auth.middleware.js';
-import { wrapAsync } from '../middlewares/error.middleware.js';
+} from "../middlewares/auth.middleware.js";
+import { wrapAsync } from "../middlewares/error.middleware.js";
 const authRoutes = express.Router();
 // Đăng ký tài khoản
-authRoutes.post('/register', registerValidator, wrapAsync(registerController));
+authRoutes.post("/register", registerValidator, wrapAsync(registerController));
 
 // Đăng nhập
-authRoutes.post('/login', loginValidator, wrapAsync(loginController));
+authRoutes.post("/login", loginValidator, wrapAsync(loginController));
 
 // Refresh access token
-authRoutes.get('/refresh', wrapAsync(refreshController));
+authRoutes.get("/refresh", wrapAsync(refreshController));
 
 // // Quên mật khẩu (gửi mail reset)
-authRoutes.post('/forgot-password', forgotPasswordValidator, wrapAsync(forgotPasswordController));
+authRoutes.post("/forgot-password", forgotPasswordValidator, wrapAsync(forgotPasswordController));
 
 // // Đặt lại mật khẩu bằng token
 authRoutes.post(
-  '/reset-password/:token',
+  "/reset-password/:token",
   resetPasswordValidator,
   wrapAsync(resetPasswordController)
 );
 
 // // Đổi mật khẩu (khi đang đăng nhập)
 authRoutes.put(
-  '/change-password',
+  "/change-password",
   authMiddleware,
   changePasswordValidator,
   wrapAsync(changePasswordController)
 );
 
 // Đăng xuất (xóa refresh token)
-authRoutes.get('/logout', wrapAsync(logoutController));
+authRoutes.get("/logout", wrapAsync(logoutController));
 
 // // Đăng nhập bằng Google OAuth
-authRoutes.post('/oauth-google', wrapAsync(oauthGoogleLoginController));
+authRoutes.post("/oauth-google", wrapAsync(oauthGoogleLoginController));
 
 // // Xác minh email
 // authRoutes.get("/verify-email/:token", verifyEmail);
