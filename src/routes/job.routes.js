@@ -20,7 +20,7 @@ jobRoutes.get('/', wrapAsync(getAllJobs));
 jobRoutes.post('/post', wrapAsync(createJob));
 
 // Get candidates for a specific job
-jobRoutes.get('/:jobId/candidates', wrapAsync(getCandidates));
+jobRoutes.get('/:jobId/candidates',  wrapAsync(getCandidates));
 
 // get job by id
 jobRoutes.get('/:id', wrapAsync(getJobById));
