@@ -21,6 +21,8 @@ appRoutes.use("/users", userRoutes);
 
 appRoutes.use("/applications", applicationRoutes);
 
+appRoutes.use("/candidates", candidateRoutes);
+
 // Job routes
 appRoutes.use("/jobs", jobRoutes);
 // Tag routes
