@@ -24,7 +24,7 @@ appRoutes.use("/auth", authRoutes);
 
 // Admin routes
 appRoutes.use("/admin", adminRoutes);
-appRoutes.use("/status", appstatusRoutes);
+appRoutes.use("/applications", appstatusRoutes);
 appRoutes.use("/companies", companyRoutes);
 
 export default appRoutes;

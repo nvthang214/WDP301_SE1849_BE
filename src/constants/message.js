@@ -51,10 +51,15 @@ export const MESSAGE = {
 // THÔNG BÁO ỨNG TUYỂN & CV
   APPLICATION_STATUS_FETCH_SUCCESS: " Trạng thái đậu ",
   APPLICATION_STATUS_FETCH_FAILED: " Trạng thái rớt ",
+  // Tải CV 
   CV_IMPORT_SUCCESS: " Tải CV thành công",
   CV_IMPORT_FAILED: " Tải CV thất bại",
+  // Xóa CV
   CV_DELETE_SUCCESS: " Xóa CV thành công",
   CV_DELETE_FAILED: " Xóa CV thất bại",
+  // Ứng tuyển Job 
+  APPLY_JOB_SUCCESS: "Ứng tuyển công việc thành công",
+  APPLY_JOB_FAILED: "Ứng tuyển công việc thất bại",
   
   /////////////////////////////////////////////////////
   // THÔNG BÁO COMPANY
