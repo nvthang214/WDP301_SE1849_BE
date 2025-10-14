@@ -13,11 +13,15 @@ const appRoutes = express.Router();
 import userRoutes from './user.routes.js';
 import applicationRoutes from './application.routes.js';
 import candidateRoutes from './candidate.routes.js';
+import candidateDashboardRoutes from './candidate-dashboard.routes.js';
+import candidateSettingsRoutes from './candidate-settings.routes.js';
 
 // appRoutes.use("/auth", authRoutes);
 appRoutes.use('/users', userRoutes);
 appRoutes.use('/applications', applicationRoutes);
 appRoutes.use('/candidates', candidateRoutes);
+appRoutes.use('/candidate-dashboard', candidateDashboardRoutes);
+appRoutes.use('/candidate-settings', candidateSettingsRoutes);
 appRoutes.use('/jobs', jobRoutes);
 appRoutes.use("/auth", authRoutes);
 
