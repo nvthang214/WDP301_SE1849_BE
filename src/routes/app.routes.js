@@ -7,7 +7,6 @@ import companyRoutes from "./company.routes.js";
 import authRoutes from "./auth.routes.js";
 import adminRoutes from "./admin.routes.js";
 import appstatusRoutes from "./appstatus.routes.js";
-import companyRoutes from "./company.routes.js";
 
 
 const appRoutes = express.Router();
