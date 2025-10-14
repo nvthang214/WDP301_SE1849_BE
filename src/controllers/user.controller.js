@@ -1,6 +1,4 @@
 import User from "../models/User.js";
-import Candidate from "../models/Candidate.js";
-import Recruiter from "../models/Recruiter.js";
 import { MESSAGE } from "../constants/message.js";
 import { toResultOk, toResultError } from "../results/Result.js";
 
@@ -15,12 +13,12 @@ export const getProfile = async (req, res) => {
   let profileData = { ...user.toObject() };
 
   if (user.role.name === "candidate") {
-    const candidateProfile = await Candidate.findOne({ user_id: userId });
+    const candidateProfile = await User.findOne({ user_id: userId });
     if (candidateProfile) {
       profileData = { ...profileData, ...candidateProfile.toObject() };
     }
   } else if (user.role.name === "recruiter") {
-    const recruiterProfile = await Recruiter.findOne({ user_id: userId });
+    const recruiterProfile = await User.findOne({ user_id: userId });
     if (recruiterProfile) {
       profileData = { ...profileData, ...recruiterProfile.toObject() };
     }
@@ -59,7 +57,7 @@ export const updateProfile = async (req, res) => {
 
   if (user.role.name === "candidate") {
     const { profile, avatar, experience_years, skills, cv } = profileDetails;
-    const candidateProfile = await Candidate.findOneAndUpdate(
+    const candidateProfile = await User.findOneAndUpdate(
       { user_id: userId },
       { profile, avatar, experience_years, skills, cv },
       { new: true, upsert: true }
@@ -69,7 +67,7 @@ export const updateProfile = async (req, res) => {
     }
   } else if (user.role.name === "recruiter") {
     const { position } = profileDetails;
-    const recruiterProfile = await Recruiter.findOneAndUpdate(
+    const recruiterProfile = await User.findOneAndUpdate(
       { user_id: userId },
       { position },
       { new: true, upsert: true }
@@ -99,12 +97,12 @@ export const getUserById = async (req, res) => {
   let profileData = { ...user.toObject() };
 
   if (user.role.name === "candidate") {
-    const candidateProfile = await Candidate.findOne({ user_id: id });
+    const candidateProfile = await User.findOne({ user_id: id });
     if (candidateProfile) {
       profileData = { ...profileData, ...candidateProfile.toObject() };
     }
   } else if (user.role.name === "recruiter") {
-    const recruiterProfile = await Recruiter.findOne({ user_id: id });
+    const recruiterProfile = await User.findOne({ user_id: id });
     if (recruiterProfile) {
       profileData = { ...profileData, ...recruiterProfile.toObject() };
     }
