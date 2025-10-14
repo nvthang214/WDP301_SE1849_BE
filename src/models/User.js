@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const UserSchema = new mongoose.Schema(
   {
@@ -13,8 +13,6 @@ const UserSchema = new mongoose.Schema(
     },
     username: {
       type: String,
-      required: true,
-      unique: true,
       maxlength: 30,
       trim: true,
     },
@@ -36,7 +34,7 @@ const UserSchema = new mongoose.Schema(
     },
     role: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Role",
+      ref: 'Role',
       required: true,
     },
     phoneNumber: {
@@ -47,13 +45,14 @@ const UserSchema = new mongoose.Schema(
       default: true,
     },
     avatar: { type: String },
+    isEmailVerified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
 // Hash password trước khi lưu
-UserSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+UserSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
@@ -64,4 +63,4 @@ UserSchema.methods.comparePassword = async function (candidate) {
   return bcrypt.compare(candidate, this.password);
 };
 
-export default mongoose.model("User", UserSchema);
+export default mongoose.model('User', UserSchema);
