@@ -1,16 +1,23 @@
 import express from 'express';
 import { 
-    getCompanyById
+    createCompany,
+    getCompanyById,
+    updateCompany,
+    deleteCompany
 } from '../controllers/company.controller.js';
 import { getCandidates } from '../controllers/candidate.controller.js'; // Import getCandidates
 import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
 
 const companyRoutes = express.Router();
-// companyRoutes.use(authMiddleware);
+// companyRoutes.use(authMiddleware); 
 
 companyRoutes.get('/:id', wrapAsync(getCompanyById));
-// Get all jobs for a specific company
-companyRoutes.get('/:companyId/jobs', wrapAsync(getCandidates));
+// update company by id
+companyRoutes.put('/edit/:id', wrapAsync(updateCompany));
+// create new company
+companyRoutes.post('/create', wrapAsync(createCompany));
+// delete company by id
+companyRoutes.delete('/:id', wrapAsync(deleteCompany));
 
 export default companyRoutes;
