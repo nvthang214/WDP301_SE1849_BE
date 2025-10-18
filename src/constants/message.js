@@ -40,6 +40,7 @@ export const MESSAGE = {
 
   // THÔNG BÁO USER
   USER_NOT_FOUND: "Người dùng không tồn tại",
+  ROLE_NOT_FOUND: "Vai trò không tồn tại",
   USER_BANNED: "Tài khoản đã bị khóa",
   FORGOT_PASSWORD_BODY:
     "Bạn đã yêu cầu lấy lại mật khẩu. Vui lòng kiểm tra email để đặt lại mật khẩu.",

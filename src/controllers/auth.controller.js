@@ -24,6 +24,8 @@ config();
 export const registerController = async (req, res) => {
   let { username, email, password, firstName, lastName } = req.body;
   const role = await Role.findOne({ name: "candidate" });
+  if (!role) throw new ErrorResponse(400, MESSAGE.ROLE_NOT_FOUND);
+
   const newUser = new User({
     role: role._id,
     username,
@@ -189,45 +191,45 @@ export const oauthGoogleLoginController = async (req, res) => {
   const { token } = req.body;
   if (!token) throw new ErrorResponse(400, MESSAGE.GG_TOKEN_INVALID);
 
-  try {
-    const payload = await verifyGoogleToken(token);
+  const payload = await verifyGoogleToken(token);
 
-    const { email, given_name, family_name, picture } = payload;
+  const { email, given_name, family_name, picture } = payload;
 
-    let user = await User.findOne({ email });
-    if (!user) {
-      user = await User.create({
-        email,
-        firstName: given_name,
-        lastName: family_name,
-        profileImage: picture,
-      });
-    }
-
-    const jwtPayload = { userId: user._id.toString() };
-    const accessToken = await generateAccessToken(jwtPayload);
-    const refreshToken = await generateRefreshToken(jwtPayload);
-
-    const days = Number(TOKEN_EXPIRATION.REFRESH_EXPIRES.split("d")[0]);
-    const refreshTokenExpiry = 1000 * 60 * 60 * 24 * days;
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      path: "/",
-      maxAge: refreshTokenExpiry,
-      sameSite: "Strict",
+  let user = await User.findOne({ email });
+  if (!user) {
+    const role = await Role.findOne({ name: "candidate" });
+    if (!role) throw new ErrorResponse(400, MESSAGE.ROLE_NOT_FOUND);
+    user = await User.create({
+      role: role._id,
+      email,
+      firstName: given_name,
+      lastName: family_name,
+      avatar: picture,
+      isEmailVerified: true,
     });
-
-    return res.status(200).json(
-      toResultOk({
-        msg: MESSAGE.LOGIN_SUCCESS,
-        data: {
-          token: accessToken,
-        },
-      })
-    );
-  } catch (err) {
-    throw new ErrorResponse(400, MESSAGE.GG_TOKEN_INVALID);
   }
+
+  const jwtPayload = { userId: user._id.toString() };
+  const accessToken = await generateAccessToken(jwtPayload);
+  const refreshToken = await generateRefreshToken(jwtPayload);
+
+  const days = Number(TOKEN_EXPIRATION.REFRESH_EXPIRES.split("d")[0]);
+  const refreshTokenExpiry = 1000 * 60 * 60 * 24 * days;
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    path: "/",
+    maxAge: refreshTokenExpiry,
+    sameSite: "Strict",
+  });
+
+  return res.status(200).json(
+    toResultOk({
+      msg: MESSAGE.LOGIN_SUCCESS,
+      data: {
+        token: accessToken,
+      },
+    })
+  );
 };
