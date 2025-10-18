@@ -7,7 +7,6 @@ import {
     // deleteJob,
     deactivateJob
 } from '../controllers/job.controller.js';
-import { getCandidates } from '../controllers/candidate.controller.js'; // Import getCandidates
 import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
 
@@ -19,8 +18,6 @@ jobRoutes.get('/', wrapAsync(getAllJobs));
 // create new job
 jobRoutes.post('/post', wrapAsync(createJob));
 
-// Get candidates for a specific job
-jobRoutes.get('/:jobId/candidates', wrapAsync(getCandidates));
 
 // get job by id
 jobRoutes.get('/:id', wrapAsync(getJobById));
