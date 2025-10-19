@@ -43,7 +43,20 @@ export const MESSAGE = {
   USER_BANNED: "Tài khoản đã bị khóa",
   FORGOT_PASSWORD_BODY:
     "Bạn đã yêu cầu lấy lại mật khẩu. Vui lòng kiểm tra email để đặt lại mật khẩu.",
+  PROFILE_NOT_FOUND: "Không tìm thấy hồ sơ người dùng",
 
+  // THÔNG BÁO CANDIDATE 
+  CANDIDATE_SOCIAL_FETCH_SUCCESS: "Lấy thông tin mạng xã hội của ứng viên thành công",
+  CANDIDATE_SOCIAL_FETCH_FAILED: "Lấy thông tin mạng xã hội của ứng viên thất bại",
+
+  CANDIDATE_SOCIAL_CREATE_SUCCESS: "Thêm mạng xã hội cho ứng viên thành công",
+  CANDIDATE_SOCIAL_CREATE_FAILED: "Thêm mạng xã hội cho ứng viên thất bại",
+
+  CANDIDATE_SOCIAL_UPDATE_SUCCESS: "Cập nhật mạng xã hội của ứng viên thành công",
+  CANDIDATE_SOCIAL_UPDATE_FAILED: "Cập nhật mạng xã hội của ứng viên thất bại",
+
+  CANDIDATE_SOCIAL_DELETE_SUCCESS: "Xóa mạng xã hội của ứng viên thành công",
+  CANDIDATE_SOCIAL_DELETE_FAILED: "Xóa mạng xã hội của ứng viên thất bại",
 
   /////////////////////////////////////////////////////
   // THÔNG BÁO JOB
