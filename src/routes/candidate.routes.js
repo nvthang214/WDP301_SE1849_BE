@@ -1,11 +1,19 @@
 import express from "express";
-import { getCandidateSocial,
+import {
+    getCandidateProfile,
+    createCandidateProfile,
+    updateCandidateProfile,
+    getCandidateSocial,
     addCandidateSocial,
     updateCandidateSocial,
     deleteCandidateSocial
 } from "../controllers/candidate.controller.js";
 
 const router = express.Router();
+
+router.get("/profile/:userId", getCandidateProfile);
+router.post("/profile/:userId", createCandidateProfile);
+router.put("/profile/:userId", updateCandidateProfile);
 
 router.get("/social/:userId", getCandidateSocial);
 router.post("/social/:userId", addCandidateSocial);

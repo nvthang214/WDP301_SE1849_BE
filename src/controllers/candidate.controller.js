@@ -11,6 +11,175 @@ const SUPPORTED_SOCIAL_PLATFORMS = [
   "youtube",
 ];
 
+const PROFILE_SOCIAL_FIELDS = ["linkedin", "twitter", "facebook", "instagram"];
+
+const sanitizeSocialPayload = (social) => {
+  if (!social || typeof social !== "object") return null;
+
+  const sanitized = {};
+  for (const field of PROFILE_SOCIAL_FIELDS) {
+    const value = social[field];
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) sanitized[field] = trimmed;
+    }
+  }
+
+  return Object.keys(sanitized).length ? sanitized : null;
+};
+
+const extractProfilePayload = (payload = {}) => {
+  const baseFields = ["experience", "education", "bio", "cv", "location"];
+  const result = {};
+
+  for (const field of baseFields) {
+    if (
+      Object.prototype.hasOwnProperty.call(payload, field) &&
+      payload[field] !== undefined
+    ) {
+      result[field] = payload[field];
+    }
+  }
+
+  if (Array.isArray(payload.tags)) {
+    result.tags = payload.tags;
+  }
+
+  const sanitizedSocial = sanitizeSocialPayload(payload.social);
+  if (sanitizedSocial) {
+    result.social = sanitizedSocial;
+  }
+
+  return result;
+};
+
+export const getCandidateProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).populate("role", "name");
+
+    if (!user)
+      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
+
+    if (user.role?.name !== "candidate")
+      return res.json(toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }));
+
+    const profile = await Profile.findOne({ user: user._id })
+      .populate("tags", "name")
+      .lean();
+
+    if (!profile)
+      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.PROFILE_NOT_FOUND }));
+
+    return res.json(
+      toResultOk({
+        msg: MESSAGE.CANDIDATE_PROFILE_FETCH_SUCCESS,
+        data: profile,
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    return res.json(
+      toResultError({ statusCode: 500, msg: MESSAGE.CANDIDATE_PROFILE_FETCH_FAILED })
+    );
+  }
+};
+
+export const createCandidateProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).populate("role", "name");
+
+    if (!user)
+      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
+
+    if (user.role?.name !== "candidate")
+      return res.json(toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }));
+
+    const existingProfile = await Profile.findOne({ user: user._id });
+    if (existingProfile)
+      return res.json(
+        toResultError({
+          statusCode: 409,
+          msg: MESSAGE.CANDIDATE_PROFILE_ALREADY_EXISTS,
+        })
+      );
+
+    const payload = extractProfilePayload(req.body);
+
+    const profile = await Profile.create({
+      ...payload,
+      user: user._id,
+    });
+
+    const populatedProfile = await profile.populate("tags", "name");
+
+    return res.status(201).json(
+      toResultOk({
+        statusCode: 201,
+        msg: MESSAGE.CANDIDATE_PROFILE_CREATE_SUCCESS,
+        data: populatedProfile,
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    return res.json(
+      toResultError({ statusCode: 500, msg: MESSAGE.CANDIDATE_PROFILE_CREATE_FAILED })
+    );
+  }
+};
+
+export const updateCandidateProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).populate("role", "name");
+
+    if (!user)
+      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
+
+    if (user.role?.name !== "candidate")
+      return res.json(toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }));
+
+    const profile = await Profile.findOne({ user: user._id });
+    if (!profile)
+      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.PROFILE_NOT_FOUND }));
+
+    const payload = extractProfilePayload(req.body);
+
+    if (Object.keys(payload).length === 0)
+      return res.json(toResultError({ statusCode: 400, msg: MESSAGE.FIELD_REQUIRED }));
+
+    const { social, ...rest } = payload;
+
+    for (const [key, value] of Object.entries(rest)) {
+      profile[key] = value;
+    }
+
+    if (social) {
+      const updatedSocial = { ...(profile.social || {}) };
+      for (const [platform, url] of Object.entries(social)) {
+        updatedSocial[platform] = url;
+      }
+      profile.social = updatedSocial;
+    }
+
+    await profile.save();
+    await profile.populate("tags", "name");
+
+    return res.json(
+      toResultOk({
+        msg: MESSAGE.CANDIDATE_PROFILE_UPDATE_SUCCESS,
+        data: profile,
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    return res.json(
+      toResultError({ statusCode: 500, msg: MESSAGE.CANDIDATE_PROFILE_UPDATE_FAILED })
+    );
+  }
+};
+
 export const getCandidateSocial = async (req, res) => {
   try {
     const { userId } = req.params;

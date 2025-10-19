@@ -58,6 +58,17 @@ export const MESSAGE = {
   CANDIDATE_SOCIAL_DELETE_SUCCESS: "Xóa mạng xã hội của ứng viên thành công",
   CANDIDATE_SOCIAL_DELETE_FAILED: "Xóa mạng xã hội của ứng viên thất bại",
 
+  CANDIDATE_PROFILE_FETCH_SUCCESS: "Lấy hồ sơ ứng viên thành công",
+  CANDIDATE_PROFILE_FETCH_FAILED: "Lấy hồ sơ ứng viên thất bại",
+
+  CANDIDATE_PROFILE_CREATE_SUCCESS: "Tạo hồ sơ ứng viên thành công",
+  CANDIDATE_PROFILE_CREATE_FAILED: "Tạo hồ sơ ứng viên thất bại",
+
+  CANDIDATE_PROFILE_UPDATE_SUCCESS: "Cập nhật hồ sơ ứng viên thành công",
+  CANDIDATE_PROFILE_UPDATE_FAILED: "Cập nhật hồ sơ ứng viên thất bại",
+
+  CANDIDATE_PROFILE_ALREADY_EXISTS: "Hồ sơ ứng viên đã tồn tại",
+
   /////////////////////////////////////////////////////
   // THÔNG BÁO JOB
   JOB_NOT_FOUND: "Không tìm thấy công việc",
