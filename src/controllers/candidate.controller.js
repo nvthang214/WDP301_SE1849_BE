@@ -2,6 +2,7 @@ import Profile from "../models/Profile.js";
 import { MESSAGE } from "../constants/message.js";
 import { toResultError, toResultOk } from "../results/Result.js";
 import User from "../models/User.js";
+import Application from "../models/Application.js";
 
 const SUPPORTED_SOCIAL_PLATFORMS = [
   "linkedin",
@@ -313,6 +314,57 @@ export const deleteCandidateSocial = async (req, res) => {
     console.error(error);
     return res.json(
       toResultError({ statusCode: 500, msg: MESSAGE.CANDIDATE_SOCIAL_DELETE_FAILED })
+    );
+  }
+};
+
+export const getCandidateAppliedJobs = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).populate("role", "name");
+
+    if (!user)
+      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
+
+    if (user.role?.name !== "candidate")
+      return res.json(toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }));
+
+    const applications = await Application.find({ candidate: user._id })
+      .sort({ createdAt: -1 })
+      .populate({
+        path: "job",
+        populate: [
+          { path: "company", select: "name logo" },
+          { path: "category", select: "name" },
+          { path: "tags", select: "name" },
+        ],
+      })
+      .lean();
+
+    const appliedJobs = applications
+      .filter((application) => application.job)
+      .map((application) => ({
+        applicationId: application._id,
+        status: application.status || null,
+        resume: application.resume || "",
+        coverLetter: application.coverLetter || "",
+        appliedAt: application.createdAt,
+        job: application.job,
+      }));
+
+    return res.json(
+      toResultOk({
+        msg: MESSAGE.CANDIDATE_APPLIED_JOBS_FETCH_SUCCESS,
+        data: appliedJobs,
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    return res.json(
+      toResultError({
+        statusCode: 500,
+        msg: MESSAGE.CANDIDATE_APPLIED_JOBS_FETCH_FAILED,
+      })
     );
   }
 };
