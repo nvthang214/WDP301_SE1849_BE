@@ -20,7 +20,7 @@ export const authMiddleware = async (req, res, next) => {
 
   try {
     const { payload } = await verifyAccessToken(token, process.env.JWT_SECRET);
-    req.user = payload;
+    req.user = payload; // { userId }
   } catch (error) {
     return next(new ErrorResponse(401, MESSAGE.JWT_INVALID));
   }
@@ -30,6 +30,16 @@ export const authMiddleware = async (req, res, next) => {
     const user = await User.findById(user_raw.userId).populate("role", "name");
     if (!user) throw new ErrorResponse(404, MESSAGE.USER_NOT_FOUND);
     if (!user.isActive) throw new ErrorResponse(403, MESSAGE.USER_BANNED);
+
+    // Gắn thêm thông tin quyền để middleware sau dùng
+    req.user = {
+      userId: user._id.toString(),
+      roleId: user.role?._id?.toString(),
+      roleName: user.role?.name,
+      role: user.role?.name,           // THÊM DÒNG NÀY
+      isActive: user.isActive,
+    };
+
     next();
   } catch (error) {
     next(error);
