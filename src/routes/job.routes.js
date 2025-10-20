@@ -25,6 +25,9 @@ jobRoutes.use(authMiddleware);
 // create new job
 jobRoutes.post('/post', wrapAsync(createJob));
 
+
+// get job by id
+jobRoutes.get('/:id', wrapAsync(getJobById));
 // update job by id
 jobRoutes.put('/edit/:id', wrapAsync(updateJob));
 

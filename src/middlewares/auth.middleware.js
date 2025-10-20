@@ -1,9 +1,9 @@
-import { config } from 'dotenv';
-import validator from 'validator';
-import { MESSAGE } from '../constants/message.js';
-import ErrorResponse from '../lib/helper/ErrorResponse.js';
-import User from '../models/User.js';
-import { verifyAccessToken, verifyResetToken } from '../utils/jwt.js';
+import { config } from "dotenv";
+import validator from "validator";
+import { MESSAGE } from "../constants/message.js";
+import ErrorResponse from "../lib/helper/ErrorResponse.js";
+import User from "../models/User.js";
+import { verifyAccessToken, verifyResetToken } from "../utils/jwt.js";
 config();
 /**
  * Middleware xác thực JWT cho các route yêu cầu đăng nhập.
@@ -12,11 +12,11 @@ config();
  */
 export const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return next(new ErrorResponse(401, MESSAGE.JWT_INVALID));
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.split(" ")[1];
 
   try {
     const { payload } = await verifyAccessToken(token, process.env.JWT_SECRET);
@@ -27,7 +27,7 @@ export const authMiddleware = async (req, res, next) => {
 
   try {
     const user_raw = req.user;
-    const user = await User.findById(user_raw.userId).populate('role', 'name');
+    const user = await User.findById(user_raw.userId).populate("role", "name");
     if (!user) throw new ErrorResponse(404, MESSAGE.USER_NOT_FOUND);
     if (!user.isActive) throw new ErrorResponse(403, MESSAGE.USER_BANNED);
     next();
@@ -139,7 +139,7 @@ export const resetPasswordValidator = async (req, res, next) => {
       req.userId = payload.userId;
       next();
     } catch (err) {
-      if (err.name === 'TokenExpiredError') {
+      if (err.name === "TokenExpiredError") {
         throw new ErrorResponse(400, MESSAGE.JWT_EXPIRED);
       }
       throw new ErrorResponse(400, MESSAGE.JWT_INVALID);
