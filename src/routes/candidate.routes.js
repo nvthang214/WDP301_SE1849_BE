@@ -9,19 +9,22 @@ import {
     deleteCandidateSocial,
     getCandidateAppliedJobs
 } from "../controllers/candidate.controller.js";
+import { wrapAsync } from '../middlewares/error.middleware.js';
+import { authMiddleware} from '../middlewares/auth.middleware.js';
 
-const router = express.Router();
+const candidateRoutes = express.Router();
+// candidateRoutes.use(authMiddleware);
 
-router.get("/profile/:userId", getCandidateProfile);
-router.post("/profile/:userId", createCandidateProfile);
-router.put("/profile/:userId", updateCandidateProfile);
+candidateRoutes.get("/profile/:userId", wrapAsync(getCandidateProfile));
+candidateRoutes.post("/profile/:userId", wrapAsync(createCandidateProfile));
+candidateRoutes.put("/profile/:userId", wrapAsync(updateCandidateProfile));
 
-router.get("/social/:userId", getCandidateSocial);
-router.post("/social/:userId", addCandidateSocial);
-router.put("/social/:userId", updateCandidateSocial);
-router.delete("/social/:userId", deleteCandidateSocial);
+candidateRoutes.get("/social/:userId", wrapAsync(getCandidateSocial));
+candidateRoutes.post("/social/:userId", wrapAsync(addCandidateSocial));
+candidateRoutes.put("/social/:userId", wrapAsync(updateCandidateSocial));
+candidateRoutes.delete("/social/:userId", wrapAsync(deleteCandidateSocial));
 
-router.get("/applied-jobs/:userId", getCandidateAppliedJobs);
+candidateRoutes.get("/applied-jobs/:userId", wrapAsync(getCandidateAppliedJobs));
 
 
-export default router;
+export default candidateRoutes;
