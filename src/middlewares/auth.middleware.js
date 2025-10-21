@@ -27,19 +27,11 @@ export const authMiddleware = async (req, res, next) => {
 
   try {
     const user_raw = req.user;
-    const user = await User.findById(user_raw.userId).populate("role", "name");
+    const user = await User.findById(user_raw.userId).populate('role', 'name -_id');
+    
     if (!user) throw new ErrorResponse(404, MESSAGE.USER_NOT_FOUND);
     if (!user.isActive) throw new ErrorResponse(403, MESSAGE.USER_BANNED);
-
-    // Gắn thêm thông tin quyền để middleware sau dùng
-    req.user = {
-      userId: user._id.toString(),
-      roleId: user.role?._id?.toString(),
-      roleName: user.role?.name,
-      role: user.role?.name,           // THÊM DÒNG NÀY
-      isActive: user.isActive,
-    };
-
+    req.user = user;
     next();
   } catch (error) {
     next(error);

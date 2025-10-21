@@ -106,13 +106,12 @@ export const deleteCompany = async (req, res) => {
   res.json(toResultOk({ msg: MESSAGE.COMPANY_DELETE_SUCCESS }));
 }
 
-// get companies by recruiter ID
-export const getCompaniesByRecruiter = async (req, res) => {
+export const getCompanyOfRecruiter = async (req, res) => {
   try {
-    const { recruiterId } = req.params;
-    const companies = await Company.findOne({ recruiter: recruiterId });
-    res.json(toResultOk({ msg: MESSAGE.COMPANY_FETCH_SUCCESS, data: companies }));
+    const recruiterId = req.user._id;
+    const company = await Company.findOne({ recruiter: recruiterId });
+    res.json(toResultOk({ msg: MESSAGE.COMPANY_FETCH_SUCCESS, data: company }));
   } catch (error) {
-    throw new ErrorResponse(500, 'Error fetching companies by recruiter');
+    throw new ErrorResponse(500, 'Error fetching company by recruiter');
   }
 }
