@@ -7,7 +7,8 @@ export const MESSAGE = {
   JWT_INVALID: "Token không hợp lệ",
   JWT_EXPIRED: "Token đã hết hạn",
   FORBIDDEN: "Không có quyền truy cập",
-  UNAUTHORIZED: "Chưa xác thực",
+  UNAUTHORIZED: "Chưa được xác thực",
+  LOGIN_EXPIRED: "Phiên đăng nhập hết hạn",
   REFRESH_TOKEN_SUCCESS: "Làm mới token thành công",
   SEND_MAIL_ERROR: "Lỗi gửi email, vui lòng thử lại sau",
   GG_TOKEN_INVALID: "Token Google không hợp lệ",
@@ -46,7 +47,7 @@ export const MESSAGE = {
     "Bạn đã yêu cầu lấy lại mật khẩu. Vui lòng kiểm tra email để đặt lại mật khẩu.",
   PROFILE_NOT_FOUND: "Không tìm thấy hồ sơ người dùng",
 
-  // THÔNG BÁO CANDIDATE 
+  // THÔNG BÁO CANDIDATE
   CANDIDATE_SOCIAL_FETCH_SUCCESS: "Lấy thông tin mạng xã hội của ứng viên thành công",
   CANDIDATE_SOCIAL_FETCH_FAILED: "Lấy thông tin mạng xã hội của ứng viên thất bại",
 
@@ -116,7 +117,6 @@ export const MESSAGE = {
   CATEGORY_CREATE_FAILED: "Tạo danh mục thất bại",
 
   ////////////////////////////////////////////////////////
- 
 
   // Tải CV
   CV_IMPORT_SUCCESS: " Tải CV thành công",
@@ -124,7 +124,7 @@ export const MESSAGE = {
   // Xóa CV
   CV_DELETE_SUCCESS: " Xóa CV thành công",
   CV_DELETE_FAILED: " Xóa CV thất bại",
-  
+
   // Lấy danh sách công việc đã ứng tuyển
   CANDIDATE_APPLIED_JOBS_FETCH_SUCCESS: "Lấy danh sách công việc đã ứng tuyển thành công",
   CANDIDATE_APPLIED_JOBS_FETCH_FAILED: "Lấy danh sách công việc đã ứng tuyển thất bại",

@@ -10,26 +10,31 @@ const UserSchema = new mongoose.Schema(
       maxlength: 108,
       trim: true,
       lowercase: true,
+      default: "",
     },
     username: {
       type: String,
       maxlength: 30,
       trim: true,
+      default: "",
     },
     password: {
       type: String,
+      default: "",
     },
     firstName: {
       type: String,
       required: true,
       maxlength: 30,
       trim: true,
+      default: "",
     },
     lastName: {
       type: String,
       required: true,
       maxlength: 30,
       trim: true,
+      default: "",
     },
     role: {
       type: mongoose.Schema.Types.ObjectId,
@@ -38,12 +43,13 @@ const UserSchema = new mongoose.Schema(
     },
     phoneNumber: {
       type: String,
+      default: "",
     },
     isActive: {
       type: Boolean,
       default: true,
     },
-    avatar: { type: String },
+    avatar: { type: String, default: "" },
     isEmailVerified: { type: Boolean, default: false },
   },
   { timestamps: true }
