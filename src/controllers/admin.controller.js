@@ -8,6 +8,12 @@ import User from "../models/User.js";
 export const banUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    if (!req.body) {
+      return res.status(400).json({
+        success: false,
+        message: "Request body is required",
+      });
+    }
     const { isActive } = req.body;
 
     // Validate input
@@ -27,8 +33,8 @@ export const banUser = async (req, res) => {
       });
     }
 
-    // Update user's IsActive status
-    user.IsActive = isActive;
+    // Update user's isActive status (match current schema)
+    user.isActive = isActive;
     await user.save();
 
     const action = isActive ? "unbanned" : "banned";
@@ -37,9 +43,10 @@ export const banUser = async (req, res) => {
       message: `User has been ${action} successfully`,
       data: {
         userId: user._id,
-        email: user.Email,
-        fullName: user.FullName,
-        isActive: user.IsActive,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isActive: user.isActive,
       },
     });
   } catch (error) {
@@ -56,6 +63,12 @@ export const banUser = async (req, res) => {
 export const updateUserRole = async (req, res) => {
   try {
     const { userId } = req.params;
+    if (!req.body) {
+      return res.status(400).json({
+        success: false,
+        message: "Request body is required",
+      });
+    }
     const { roleId } = req.body;
 
     console.log("Update role request:", { userId, roleId });
@@ -90,9 +103,8 @@ export const updateUserRole = async (req, res) => {
       });
     }
 
-    // Update user's role
-    user.role_id = roleId;
-    user.Role = role.name;
+    // Update user's role (match current schema)
+    user.role = roleId;
     await user.save();
 
     console.log("User updated successfully:", user);
@@ -102,10 +114,11 @@ export const updateUserRole = async (req, res) => {
       message: "User role updated successfully",
       data: {
         userId: user._id,
-        email: user.Email,
-        fullName: user.FullName,
-        roleId: user.role_id,
-        roleName: user.Role,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roleId: user.role,
+        roleName: role.name,
       },
     });
   } catch (error) {
@@ -122,8 +135,8 @@ export const updateUserRole = async (req, res) => {
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find()
-      .populate("role_id", "name")
-      .select("-Password"); // Exclude password from response
+      .populate("role", "name")
+      .select("-password"); // Exclude password from response
 
     res.status(200).json({
       success: true,
@@ -166,8 +179,8 @@ export const getUserById = async (req, res) => {
     const { userId } = req.params;
 
     const user = await User.findById(userId)
-      .populate("role_id", "name")
-      .select("-Password"); // Exclude password from response
+      .populate("role", "name")
+      .select("-password"); // Exclude password from response
 
     if (!user) {
       return res.status(404).json({
@@ -191,63 +204,18 @@ export const getUserById = async (req, res) => {
   }
 };
 
-// Get all jobs (for admin) - Simple version without complex populate
+// Get all jobs (for admin) - aligned with current Job schema
 export const getAllJobs = async (req, res) => {
   try {
-    console.log("Getting all jobs...");
-
-    // Lấy jobs đơn giản trước
-    const jobs = await Job.find();
-    console.log("Jobs found:", jobs.length);
-
-    // Populate từng phần một cách an toàn
-    const jobsWithPopulate = await Promise.all(
-      jobs.map(async (job) => {
-        const jobObj = job.toObject();
-
-        // Populate company
-        if (job.company_id) {
-          const company = await Company.findById(job.company_id);
-          jobObj.company_id = company
-            ? { _id: company._id, name: company.name }
-            : null;
-        }
-
-        // Populate category
-        if (job.category_id) {
-          const category = await Category.findById(job.category_id);
-          jobObj.category_id = category
-            ? { _id: category._id, name: category.name }
-            : null;
-        }
-
-        // Populate recruiter
-        if (job.recruiter_id) {
-          const recruiter = await Recruiter.findById(job.recruiter_id);
-          if (recruiter && recruiter.user_id) {
-            const user = await User.findById(recruiter.user_id);
-            jobObj.recruiter_id = user
-              ? {
-                  _id: recruiter._id,
-                  FullName: user.FullName,
-                  Email: user.Email,
-                }
-              : null;
-          } else {
-            jobObj.recruiter_id = null;
-          }
-        }
-
-        return jobObj;
-      })
-    );
-
-    console.log("Jobs with populate completed");
+    const jobs = await Job.find()
+      .populate("company", "name")
+      .populate("category", "name")
+      .populate({ path: "recruiter", select: "firstName lastName email" });
 
     res.status(200).json({
       success: true,
       message: "Jobs retrieved successfully",
-      data: jobsWithPopulate,
+      data: jobs,
     });
   } catch (error) {
     console.error("Error getting jobs:", error);

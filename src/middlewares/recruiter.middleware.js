@@ -10,7 +10,7 @@ import ErrorResponse from "../lib/helper/ErrorResponse.js";
 export const recruiterMiddleware = async (req, res, next) => {
   try {
     const user = req.user;
-    if (user.role !== "recruiter") {
+    if (user.role.name !== "recruiter") {
       throw new ErrorResponse(403, MESSAGE.FORBIDDEN);
     }
     next();

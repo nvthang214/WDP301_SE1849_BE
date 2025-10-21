@@ -44,6 +44,31 @@ export const MESSAGE = {
   USER_BANNED: "Tài khoản đã bị khóa",
   FORGOT_PASSWORD_BODY:
     "Bạn đã yêu cầu lấy lại mật khẩu. Vui lòng kiểm tra email để đặt lại mật khẩu.",
+  PROFILE_NOT_FOUND: "Không tìm thấy hồ sơ người dùng",
+
+  // THÔNG BÁO CANDIDATE 
+  CANDIDATE_SOCIAL_FETCH_SUCCESS: "Lấy thông tin mạng xã hội của ứng viên thành công",
+  CANDIDATE_SOCIAL_FETCH_FAILED: "Lấy thông tin mạng xã hội của ứng viên thất bại",
+
+  CANDIDATE_SOCIAL_CREATE_SUCCESS: "Thêm mạng xã hội cho ứng viên thành công",
+  CANDIDATE_SOCIAL_CREATE_FAILED: "Thêm mạng xã hội cho ứng viên thất bại",
+
+  CANDIDATE_SOCIAL_UPDATE_SUCCESS: "Cập nhật mạng xã hội của ứng viên thành công",
+  CANDIDATE_SOCIAL_UPDATE_FAILED: "Cập nhật mạng xã hội của ứng viên thất bại",
+
+  CANDIDATE_SOCIAL_DELETE_SUCCESS: "Xóa mạng xã hội của ứng viên thành công",
+  CANDIDATE_SOCIAL_DELETE_FAILED: "Xóa mạng xã hội của ứng viên thất bại",
+
+  CANDIDATE_PROFILE_FETCH_SUCCESS: "Lấy hồ sơ ứng viên thành công",
+  CANDIDATE_PROFILE_FETCH_FAILED: "Lấy hồ sơ ứng viên thất bại",
+
+  CANDIDATE_PROFILE_CREATE_SUCCESS: "Tạo hồ sơ ứng viên thành công",
+  CANDIDATE_PROFILE_CREATE_FAILED: "Tạo hồ sơ ứng viên thất bại",
+
+  CANDIDATE_PROFILE_UPDATE_SUCCESS: "Cập nhật hồ sơ ứng viên thành công",
+  CANDIDATE_PROFILE_UPDATE_FAILED: "Cập nhật hồ sơ ứng viên thất bại",
+
+  CANDIDATE_PROFILE_ALREADY_EXISTS: "Hồ sơ ứng viên đã tồn tại",
 
   /////////////////////////////////////////////////////
   // THÔNG BÁO JOB
@@ -91,18 +116,18 @@ export const MESSAGE = {
   CATEGORY_CREATE_FAILED: "Tạo danh mục thất bại",
 
   ////////////////////////////////////////////////////////
-  // THÔNG BÁO ỨNG TUYỂN & CV
-  APPLICATION_STATUS_FETCH_SUCCESS: " Trạng thái đậu ",
-  APPLICATION_STATUS_FETCH_FAILED: " Trạng thái rớt ",
+ 
+
   // Tải CV
   CV_IMPORT_SUCCESS: " Tải CV thành công",
   CV_IMPORT_FAILED: " Tải CV thất bại",
   // Xóa CV
   CV_DELETE_SUCCESS: " Xóa CV thành công",
   CV_DELETE_FAILED: " Xóa CV thất bại",
-  // Ứng tuyển Job
-  APPLY_JOB_SUCCESS: "Ứng tuyển công việc thành công",
-  APPLY_JOB_FAILED: "Ứng tuyển công việc thất bại",
+  
+  // Lấy danh sách công việc đã ứng tuyển
+  CANDIDATE_APPLIED_JOBS_FETCH_SUCCESS: "Lấy danh sách công việc đã ứng tuyển thành công",
+  CANDIDATE_APPLIED_JOBS_FETCH_FAILED: "Lấy danh sách công việc đã ứng tuyển thất bại",
 
   /////////////////////////////////////////////////////
   // THÔNG BÁO COMPANY

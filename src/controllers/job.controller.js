@@ -6,7 +6,7 @@ import { toResultOk } from '../results/Result.js';
 
 
 export const getAllJobs = async (req, res) => {
-  const { search, categoryId, jobType, experience, isActive, location, page = 1, limit = 15, minSalary, maxSalary, remote } = req.query;
+  const { search, categoryId, jobType, experience, isActive, page = 1, limit = 15, minSalary, maxSalary, remote } = req.query;
 
   let query = {};
 
@@ -18,6 +18,7 @@ export const getAllJobs = async (req, res) => {
       { title: { $regex: search, $options: 'i' } },
       { location: { $regex: search, $options: 'i' } },
       { description: { $regex: search, $options: 'i' } },
+      { location: { $regex: search, $options: 'i' } },
       { tags: { $in: tagIds } }
     ];
   }
@@ -25,7 +26,6 @@ export const getAllJobs = async (req, res) => {
   if (jobType) query.jobType = jobType;
   if (experience) query.experience = experience;
   if (isActive !== undefined) query.isActive = isActive === 'true';
-  if (location) query.location = { $regex: location, $options: 'i' };
   if (remote !== undefined) query.remote = remote === 'true';
 
   if (minSalary || maxSalary) {
@@ -73,7 +73,8 @@ export const getAllJobs = async (req, res) => {
 
 // create new job
 export const createJob = async (req, res) => {
-  const newJob = new Job(req.body);
+  const recruiterId = req?.user._id;
+  const newJob = new Job({ ...req.body, recruiter: recruiterId });
   const result = await newJob.save();
   if (!result) {
     throw new ErrorResponse(400, MESSAGE.JOB_CREATE_FAILED);
@@ -97,23 +98,15 @@ export const getJobById = async (req, res) => {
 
 // update job by id
 export const updateJob = async (req, res) => {
+  const recruiterId = req?.user._id;
   const { id } = req.params;
-  const updatedJob = await Job.findByIdAndUpdate(id, req.body, { new: true });
+  const updatedJob = await Job.findByIdAndUpdate(id, { ...req.body, recruiter: recruiterId }, { new: true });
   if (!updatedJob) {
     throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
   }
   res.json(toResultOk({ msg: MESSAGE.JOB_UPDATE_SUCCESS, data: updatedJob }));
 }
 
-// delete job by id
-// export const deleteJob = async (req, res) => {  
-//   const { id } = req.params;
-//   const deletedJob = await Job.findByIdAndDelete(id);
-//   if (!deletedJob) {
-//     return res.json(toResultError({ statusCode: 404, msg: MESSAGE.JOB_NOT_FOUND }));
-//   }
-//   res.json(toResultOkWithMessage({ msg: MESSAGE.JOB_DELETE_SUCCESS }));
-// }
 
 // deactivate job by id
 export const deactivateJob = async (req, res) => {
@@ -125,4 +118,11 @@ export const deactivateJob = async (req, res) => {
   job.isActive = false;
   await job.save();
   res.json(toResultOk({ msg: MESSAGE.JOB_DEACTIVATE_SUCCESS }));
+}
+
+// get jobs by recruiter id
+export const getJobsByRecruiterId = async (req, res) => {
+  const recruiterId = req.user._id;
+  const jobs = await Job.find({ recruiter: recruiterId });
+  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobs }));
 }
