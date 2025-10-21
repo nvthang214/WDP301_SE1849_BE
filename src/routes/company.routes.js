@@ -8,13 +8,14 @@ import {
 } from '../controllers/company.controller.js';
 import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { recruiterMiddleware } from '../middlewares/recruiter.middleware.js';
 
 const companyRoutes = express.Router();
 // Routes có parameter phải đặt SAU routes cụ thể
 // Routes cụ thể phải đặt TRƯỚC routes có parameter
 // get company by recruiter ID
 
-companyRoutes.use(authMiddleware);
+companyRoutes.use(authMiddleware, recruiterMiddleware);
 companyRoutes.get('/recruiter/my-company', wrapAsync(getCompanyOfRecruiter));
 companyRoutes.get('/:id', wrapAsync(getCompanyById));
 // update company by id
