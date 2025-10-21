@@ -4,7 +4,8 @@ import {
     getCompanyById,
     updateCompany,
     deleteCompany,
-    getCompanyOfRecruiter
+    getCompanyOfRecruiter,
+    getCompanyByRecruiterId
 } from '../controllers/company.controller.js';
 import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
@@ -17,6 +18,7 @@ const companyRoutes = express.Router();
 
 companyRoutes.use(authMiddleware, recruiterMiddleware);
 companyRoutes.get('/recruiter/my-company', wrapAsync(getCompanyOfRecruiter));
+companyRoutes.get('/recruiter/:recruiterId', wrapAsync(getCompanyByRecruiterId));
 companyRoutes.get('/:id', wrapAsync(getCompanyById));
 // update company by id
 companyRoutes.put('/edit/:id', wrapAsync(updateCompany));
