@@ -1,5 +1,5 @@
 import Application from "../models/Application.js";
-import User from "../models/User.js";
+import Candidate from "../models/User.js";
 import Job from "../models/Job.js";
 import { toResultOk, toResultError } from "../results/Result.js";
 import { MESSAGE } from "../constants/message.js";
