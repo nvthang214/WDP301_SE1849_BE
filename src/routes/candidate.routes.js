@@ -7,6 +7,8 @@ import {
     addCandidateSocial,
     updateCandidateSocial,
     deleteCandidateSocial,
+    getInfoCandidate,
+    updateInfoCandidate,
     getCandidateAppliedJobs
 } from "../controllers/candidate.controller.js";
 import { wrapAsync } from '../middlewares/error.middleware.js';
@@ -25,6 +27,7 @@ candidateRoutes.put("/social/:userId", wrapAsync(updateCandidateSocial));
 candidateRoutes.delete("/social/:userId", wrapAsync(deleteCandidateSocial));
 
 candidateRoutes.get("/applied-jobs/:userId", wrapAsync(getCandidateAppliedJobs));
-
+candidateRoutes.get("/info/:userId", wrapAsync(getInfoCandidate));
+candidateRoutes.put("/info/:userId", wrapAsync(updateInfoCandidate));
 
 export default candidateRoutes;

@@ -14,6 +14,22 @@ const SUPPORTED_SOCIAL_PLATFORMS = [
 
 const PROFILE_SOCIAL_FIELDS = ["linkedin", "twitter", "facebook", "instagram"];
 
+const ensureCandidateUser = async (res, userId) => {
+  const user = await User.findById(userId).populate("role", "name");
+
+  if (!user) {
+    res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
+    return null;
+  }
+
+  if (user.role?.name !== "candidate") {
+    res.json(toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }));
+    return null;
+  }
+
+  return user;
+};
+
 const sanitizeSocialPayload = (social) => {
   if (!social || typeof social !== "object") return null;
 
@@ -57,13 +73,8 @@ const extractProfilePayload = (payload = {}) => {
 export const getCandidateProfile = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findById(userId).populate("role", "name");
-
-    if (!user)
-      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
-
-    if (user.role?.name !== "candidate")
-      return res.json(toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }));
+    const user = await ensureCandidateUser(res, userId);
+    if (!user) return;
 
     const profile = await Profile.findOne({ user: user._id })
       .populate("tags", "name")
@@ -89,13 +100,8 @@ export const getCandidateProfile = async (req, res) => {
 export const createCandidateProfile = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findById(userId).populate("role", "name");
-
-    if (!user)
-      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
-
-    if (user.role?.name !== "candidate")
-      return res.json(toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }));
+    const user = await ensureCandidateUser(res, userId);
+    if (!user) return;
 
     const existingProfile = await Profile.findOne({ user: user._id });
     if (existingProfile)
@@ -133,13 +139,8 @@ export const createCandidateProfile = async (req, res) => {
 export const updateCandidateProfile = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findById(userId).populate("role", "name");
-
-    if (!user)
-      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
-
-    if (user.role?.name !== "candidate")
-      return res.json(toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }));
+    const user = await ensureCandidateUser(res, userId);
+    if (!user) return;
 
     const profile = await Profile.findOne({ user: user._id });
     if (!profile)
@@ -184,13 +185,8 @@ export const updateCandidateProfile = async (req, res) => {
 export const getCandidateSocial = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findById(userId).populate("role", "name");
-
-    if (!user)
-      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
-
-    if (user.role?.name !== "candidate")
-      return res.json(toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }));
+    const user = await ensureCandidateUser(res, userId);
+    if (!user) return;
 
     const profile = await Profile.findOne({ user: user._id }).select("social");
     if (!profile)
@@ -266,11 +262,14 @@ export const updateCandidateSocial = async (req, res) => {
         toResultError({ statusCode: 400, msg: MESSAGE.UNSUPPORTED_SOCIAL_PLATFORM })
       );
 
-    const profile = await Profile.findOne({ user: userId });
+    const user = await ensureCandidateUser(res, userId);
+    if (!user) return;
+
+    const profile = await Profile.findOne({ user: user._id });
     if (!profile)
       return res.json(toResultError({ statusCode: 404, msg: MESSAGE.PROFILE_NOT_FOUND }));
 
-    profile.social[platform] = url;
+    profile.social = { ...(profile.social || {}), [platform]: url };
     await profile.save();
 
     return res.json(
@@ -321,13 +320,8 @@ export const deleteCandidateSocial = async (req, res) => {
 export const getCandidateAppliedJobs = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findById(userId).populate("role", "name");
-
-    if (!user)
-      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
-
-    if (user.role?.name !== "candidate")
-      return res.json(toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }));
+    const user = await ensureCandidateUser(res, userId);
+    if (!user) return;
 
     const applications = await Application.find({ candidate: user._id })
       .sort({ createdAt: -1 })
@@ -365,6 +359,72 @@ export const getCandidateAppliedJobs = async (req, res) => {
         statusCode: 500,
         msg: MESSAGE.CANDIDATE_APPLIED_JOBS_FETCH_FAILED,
       })
+    );
+  }
+};
+
+export const getInfoCandidate = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await ensureCandidateUser(res, userId);
+    if (!user) return;
+    return res.json(
+      toResultOk({
+        msg: MESSAGE.CANDIDATE_PROFILE_FETCH_SUCCESS,
+        data: user,
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    return res.json(
+      toResultError({ statusCode: 500, msg: MESSAGE.CANDIDATE_PROFILE_FETCH_FAILED })
+    );
+  }
+};
+
+export const updateInfoCandidate = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { firstName, lastName, phoneNumber } = req.body;
+    const user = await ensureCandidateUser(res, userId);
+    if (!user) return;
+    if (typeof firstName === "string" && firstName.trim()) user.firstName = firstName.trim();
+    if (typeof lastName === "string" && lastName.trim()) user.lastName = lastName.trim();
+
+    if (phoneNumber !== undefined) {
+      if (typeof phoneNumber !== "string") {
+        return res.json(
+          toResultError({ statusCode: 400, msg: MESSAGE.PHONENUMBER_INVALID })
+        );
+      }
+
+      const sanitizedPhone = phoneNumber.trim();
+      if (!sanitizedPhone) {
+        return res.json(
+          toResultError({ statusCode: 400, msg: MESSAGE.PHONENUMBER_INVALID })
+        );
+      }
+
+      const phoneRegex = /^[0-9+()\-\s]{6,20}$/;
+      if (!phoneRegex.test(sanitizedPhone)) {
+        return res.json(
+          toResultError({ statusCode: 400, msg: MESSAGE.PHONENUMBER_INVALID })
+        );
+      }
+
+      user.phoneNumber = sanitizedPhone;
+    }
+    await user.save();
+    return res.json(
+      toResultOk({
+        msg: MESSAGE.CANDIDATE_PROFILE_UPDATE_SUCCESS,
+        data: user,
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    return res.json(
+      toResultError({ statusCode: 500, msg: MESSAGE.CANDIDATE_PROFILE_UPDATE_FAILED })
     );
   }
 };
