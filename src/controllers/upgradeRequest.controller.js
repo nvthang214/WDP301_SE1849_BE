@@ -52,7 +52,7 @@ export const createUpgradeRequest = async (req, res) => {
 
     // Kiểm tra user đã có upgrade request pending chưa
     const existingRequest = await UpgradeRequest.findOne({
-      user: user.userId,
+      user: user._id,
       status: "pending"
     });
 
@@ -68,7 +68,7 @@ export const createUpgradeRequest = async (req, res) => {
     
     // Tạo upgrade request
     const upgradeRequest = new UpgradeRequest({
-      user: user.userId,
+      user: user._id,
       companyInfo,
       businessLicense: businessLicenseBase64,
       status: "pending",
@@ -99,7 +99,7 @@ export const getMyUpgradeRequest = async (req, res) => {
   try {
     const { user } = req;
     
-    const upgradeRequest = await UpgradeRequest.findOne({ user: user.userId })
+    const upgradeRequest = await UpgradeRequest.findOne({ user: user._id })
       .populate("user", "firstName lastName email")
       .populate("reviewedBy", "firstName lastName")
       .sort({ createdAt: -1 });
@@ -188,7 +188,7 @@ export const reviewUpgradeRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const { status, adminNote } = req.body;
-    const adminId = req.user.userId;
+    const adminId = req.user._id;
 
     // Validate status
     if (!["approved", "rejected"].includes(status)) {

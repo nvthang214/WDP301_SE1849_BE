@@ -23,7 +23,7 @@ const UpgradeRequestSchema = new mongoose.Schema(
       address: { type: String },
     },
     businessLicense: {
-      type: String, // URL của file đã upload lên Cloudinary
+      type: String,
       required: true,
     },
     status: {
