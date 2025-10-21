@@ -118,12 +118,22 @@ export const MESSAGE = {
   ////////////////////////////////////////////////////////
  
 
-  // Tải CV
-  CV_IMPORT_SUCCESS: " Tải CV thành công",
-  CV_IMPORT_FAILED: " Tải CV thất bại",
-  // Xóa CV
-  CV_DELETE_SUCCESS: " Xóa CV thành công",
-  CV_DELETE_FAILED: " Xóa CV thất bại",
+  // CV
+  CV_IMPORT_SUCCESS: "Tải CV thành công",
+  CV_IMPORT_FAILED: "Tải CV thất bại",
+  CV_FETCH_SUCCESS: "Lấy CV thành công",
+  CV_FETCH_FAILED: "Lấy CV thất bại",
+  CV_UPLOAD_SUCCESS: "Tải CV thành công",
+  CV_UPLOAD_FAILED: "Tải CV thất bại",
+  CV_UPDATE_SUCCESS: "Cập nhật CV thành công",
+  CV_UPDATE_FAILED: "Cập nhật CV thất bại",
+  CV_DELETE_SUCCESS: "Xóa CV thành công",
+  CV_DELETE_FAILED: "Xóa CV thất bại",
+  CV_NOT_FOUND: "Không tìm thấy CV",
+  CV_ALREADY_EXISTS: "CV đã tồn tại",
+  CV_FILETYPE_INVALID: "Định dạng tệp không hỗ trợ",
+  CV_FILESIZE_EXCEEDED: "Tệp vượt quá dung lượng cho phép",
+  CV_FILE_REQUIRED: "Vui lòng chọn tệp CV",
   
   // Lấy danh sách công việc đã ứng tuyển
   CANDIDATE_APPLIED_JOBS_FETCH_SUCCESS: "Lấy danh sách công việc đã ứng tuyển thành công",

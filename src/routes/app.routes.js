@@ -8,6 +8,7 @@ import authRoutes from "./auth.routes.js";
 import adminRoutes from "./admin.routes.js";
 import appstatusRoutes from "./appstatus.routes.js";
 import candidateRoutes from "./candidate.routes.js";
+import uploadRoutes from "./upload.routes.js";
 
 
 const appRoutes = express.Router();
@@ -24,6 +25,7 @@ appRoutes.use('/users', userRoutes);
 appRoutes.use('/candidates', candidateRoutes);
 
 appRoutes.use('/applications', applicationRoutes);
+appRoutes.use('/uploads', uploadRoutes);
 
 // Job routes
 appRoutes.use('/jobs', jobRoutes);
