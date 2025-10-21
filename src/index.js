@@ -4,6 +4,7 @@ import express from "express";
 import connectDB from "./databases/databaseConnect.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import appRoutes from "./routes/app.routes.js";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 const app = express();
@@ -20,7 +21,7 @@ app.use(
 
 // Parse JSON bodies
 app.use(express.json());
-
+app.use(cookieParser());
 // Connect to the database
 connectDB();
 app.get("/api/sync", (req, res) => {

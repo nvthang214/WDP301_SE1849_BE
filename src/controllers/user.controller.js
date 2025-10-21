@@ -121,5 +121,5 @@ export const getMe = async (req, res) => {
   const userId = req.user._id;
   const user = await User.findById(userId).populate("role").select("-password");
   if (!user) throw new ErrorResponse(404, MESSAGE.USER_NOT_FOUND);
-  res.json(toResultOk({ msg: MESSAGE.USER_PROFILE_FETCH_SUCCESS, data: user }));
+  res.json(toResultOk({ data: user }));
 };
