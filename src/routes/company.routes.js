@@ -10,7 +10,7 @@ import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 const companyRoutes = express.Router();
-// companyRoutes.use(authMiddleware);
+companyRoutes.use(authMiddleware);
 
 // Routes cụ thể phải đặt TRƯỚC routes có parameter
 // get companies by recruiter ID

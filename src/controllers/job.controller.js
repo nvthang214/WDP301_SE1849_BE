@@ -6,7 +6,7 @@ import { toResultOk } from '../results/Result.js';
 
 
 export const getAllJobs = async (req, res) => {
-  const { search, categoryId, jobType, experience, isActive, location, page = 1, limit = 15, minSalary, maxSalary, remote } = req.query;
+  const { search, categoryId, jobType, experience, isActive, page = 1, limit = 15, minSalary, maxSalary, remote } = req.query;
 
   let query = {};
 
@@ -18,6 +18,7 @@ export const getAllJobs = async (req, res) => {
       { title: { $regex: search, $options: 'i' } },
       { location: { $regex: search, $options: 'i' } },
       { description: { $regex: search, $options: 'i' } },
+      { location: { $regex: search, $options: 'i' } },
       { tags: { $in: tagIds } }
     ];
   }
@@ -25,7 +26,6 @@ export const getAllJobs = async (req, res) => {
   if (jobType) query.jobType = jobType;
   if (experience) query.experience = experience;
   if (isActive !== undefined) query.isActive = isActive === 'true';
-  if (location) query.location = { $regex: location, $options: 'i' };
   if (remote !== undefined) query.remote = remote === 'true';
 
   if (minSalary || maxSalary) {
@@ -125,4 +125,11 @@ export const deactivateJob = async (req, res) => {
   job.isActive = false;
   await job.save();
   res.json(toResultOk({ msg: MESSAGE.JOB_DEACTIVATE_SUCCESS }));
+}
+
+// get jobs by recruiter id
+export const getJobsByRecruiterId = async (req, res) => {
+  const { recruiterId } = req.params;
+  const jobs = await Job.find({ recruiter: recruiterId });
+  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobs }));
 }

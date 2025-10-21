@@ -39,7 +39,7 @@ const JobSchema = new mongoose.Schema({
   country: { type: String },
   city: { type: String },
   remote: { type: Boolean, default: false },
-  benefits: { type: [String] },
+  benefits: { type: String },
   applyType: { type: String, default: "Jobpilot" },  
   requirements: { type: String },
   desirable: { type: String },
