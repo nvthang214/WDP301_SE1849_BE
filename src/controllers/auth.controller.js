@@ -58,10 +58,11 @@ export const loginController = async (req, res) => {
     throw new ErrorResponse(401, MESSAGE.LOGIN_FAILED);
 
   const payload = { userId: user._id.toString() };
+
   const accessToken = await generateAccessToken(payload);
   const refreshToken = await generateRefreshToken(payload);
 
-  const days = Number(TOKEN_EXPIRATION.REFRESH_EXPIRES.split("d")[0]);
+  const days = Number(TOKEN_EXPIRATION.REFRESH_EXPIRES.split("m")[0]);
   const refreshTokenExpiry = 1000 * 60 * 60 * 24 * days;
 
   res.cookie("refreshToken", refreshToken, {
@@ -87,15 +88,16 @@ export const loginController = async (req, res) => {
  */
 export const refreshController = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  if (!refreshToken) throw new ErrorResponse(401, MESSAGE.UNAUTHORIZED);
+
+  if (!refreshToken) throw new ErrorResponse(401, MESSAGE.LOGIN_EXPIRED);
   let payload;
   try {
     payload = await verifyRefreshToken(refreshToken);
   } catch (error) {
-    throw new ErrorResponse(401, MESSAGE.UNAUTHORIZED);
+    throw new ErrorResponse(401, MESSAGE.LOGIN_EXPIRED);
   }
   const accessToken = await generateAccessToken({
-    userId: payload.userId,
+    userId: payload?.payload?.userId,
   });
 
   return res.status(200).json(

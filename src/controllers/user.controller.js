@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import { MESSAGE } from "../constants/message.js";
 import { toResultOk, toResultError } from "../results/Result.js";
+import ErrorResponse from "../lib/helper/ErrorResponse.js";
 
 export const getProfile = async (req, res) => {
   const { userId } = req.params;
@@ -114,4 +115,11 @@ export const getUserById = async (req, res) => {
       data: profileData,
     })
   );
+};
+
+export const getMe = async (req, res) => {
+  const userId = req.user._id;
+  const user = await User.findById(userId).populate("role").select("-password");
+  if (!user) throw new ErrorResponse(404, MESSAGE.USER_NOT_FOUND);
+  res.json(toResultOk({ data: user }));
 };

@@ -20,7 +20,7 @@ export const authMiddleware = async (req, res, next) => {
 
   try {
     const { payload } = await verifyAccessToken(token, process.env.JWT_SECRET);
-    req.user = payload; // { userId }
+    req.user = payload;
   } catch (error) {
     return next(new ErrorResponse(401, MESSAGE.JWT_INVALID));
   }
