@@ -10,6 +10,7 @@ import {
 } from '../controllers/job.controller.js';
 import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
+import { recruiterMiddleware } from '../middlewares/recruiter.middleware.js';
 
 const jobRoutes = express.Router();
 
@@ -20,7 +21,7 @@ jobRoutes.get('/', wrapAsync(getAllJobs));
 jobRoutes.get('/:id', wrapAsync(getJobById));
 
 // use route middleware
-jobRoutes.use(authMiddleware);
+jobRoutes.use(authMiddleware, recruiterMiddleware);
 
 // create new job
 jobRoutes.post('/post', wrapAsync(createJob));
@@ -35,6 +36,6 @@ jobRoutes.put('/edit/:id', wrapAsync(updateJob));
 jobRoutes.patch('/deactivate/:id', wrapAsync(deactivateJob));
 
 // get jobs by recruiter id
-jobRoutes.get('/recruiter/:recruiterId', wrapAsync(getJobsByRecruiterId));
+jobRoutes.get('/recruiter/my-jobs', wrapAsync(getJobsByRecruiterId));
 
 export default jobRoutes;
