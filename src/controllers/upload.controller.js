@@ -10,7 +10,7 @@ const CV_ALLOWED_MIME_TYPES = ["application/pdf"];
 const CV_MAX_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
 const CV_CLOUD_FOLDER = "cv";
 const AVATAR_ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const AVATAR_MAX_SIZE_BYTES = 5 * 1024 * 1024; 
+const AVATAR_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const AVATAR_CLOUD_FOLDER = "avatar";
 
 const loadCandidateContext = async (userId) => {
@@ -291,13 +291,11 @@ export const getCandidateCv = async (req, res) => {
 		}
 
 		const { profile } = context;
-		if (!profile || !profile.cv) {
-			return res
-				.status(404)
-				.json(toResultError({ statusCode: 404, msg: MESSAGE.CV_NOT_FOUND }));
-		}
+		const cvData =
+			profile && profile.cv
+				? formatCvResponse(parseCvField(profile.cv))
+				: null;
 
-		const cvData = formatCvResponse(parseCvField(profile.cv));
 		return res.json(
 			toResultOk({
 				msg: MESSAGE.CV_FETCH_SUCCESS,
@@ -305,12 +303,13 @@ export const getCandidateCv = async (req, res) => {
 			})
 		);
 	} catch (error) {
-		console.error(" getCandidateCv", error);
+		console.error("getCandidateCv", error);
 		return res
 			.status(500)
 			.json(toResultError({ statusCode: 500, msg: MESSAGE.CV_FETCH_FAILED }));
 	}
 };
+
 
 export const addCandidateCv = async (req, res) => {
 	try {
@@ -446,22 +445,16 @@ export const getUserAvatar = async (req, res) => {
 
 		const { user } = context;
 		const avatarData = formatAvatarResponse(parseAvatarField(user.avatar));
-		if (!avatarData || !avatarData.url) {
-			return res
-				.status(404)
-				.json(
-					toResultError({ statusCode: 404, msg: MESSAGE.AVATAR_NOT_FOUND })
-				);
-		}
 
+		
 		return res.json(
 			toResultOk({
 				msg: MESSAGE.AVATAR_FETCH_SUCCESS,
-				data: avatarData,
+				data: avatarData && avatarData.url ? avatarData : null,
 			})
 		);
 	} catch (error) {
-		console.error(" getUserAvatar", error);
+		console.error("getUserAvatar", error);
 		return res
 			.status(500)
 			.json(
