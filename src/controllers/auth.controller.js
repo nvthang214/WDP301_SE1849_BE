@@ -62,7 +62,7 @@ export const loginController = async (req, res) => {
   const accessToken = await generateAccessToken(payload);
   const refreshToken = await generateRefreshToken(payload);
 
-  const days = Number(TOKEN_EXPIRATION.REFRESH_EXPIRES.split("m")[0]);
+  const days = Number(TOKEN_EXPIRATION.REFRESH_EXPIRES.split("d")[0]);
   const refreshTokenExpiry = 1000 * 60 * 60 * 24 * days;
 
   res.cookie("refreshToken", refreshToken, {
