@@ -157,9 +157,8 @@ export const resetPasswordController = async (req, res) => {
 
 export const changePasswordController = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  const userId = req.user?.userId;
+  const user = req.user; // authMiddleware đã gán user object vào req.user
 
-  const user = await User.findById(userId);
   if (!user) throw new ErrorResponse(404, MESSAGE.USER_NOT_FOUND);
 
   const isMatch = await user.comparePassword(oldPassword);
