@@ -49,7 +49,7 @@ export const getAllJobsForCompany = async (req, res) => {
 // create new company
 export const createCompany = async (req, res) => {
   // Get user ID from auth middleware (nếu có) hoặc để null nếu không có auth
-  const userId = req.user?.userId || "68ebccd50612c5184b23abbe";
+  const userId = req.user?._id || "68ebccd50612c5184b23abbe";
 
   // Add recruiter field với user ID (có thể null)
   const companyData = {
@@ -113,5 +113,15 @@ export const getCompanyOfRecruiter = async (req, res) => {
     res.json(toResultOk({ msg: MESSAGE.COMPANY_FETCH_SUCCESS, data: company }));
   } catch (error) {
     throw new ErrorResponse(500, 'Error fetching company by recruiter');
+  }
+}
+
+export const getCompanyByRecruiterId = async (req, res) => {
+  try {
+    const { recruiterId } = req.params;
+    const company = await Company.findOne({ recruiter: recruiterId });
+    res.json(toResultOk({ msg: MESSAGE.COMPANY_FETCH_SUCCESS, data: company }));
+  } catch (error) {
+    throw new ErrorResponse(500, 'Error fetching company by recruiter ID');
   }
 }

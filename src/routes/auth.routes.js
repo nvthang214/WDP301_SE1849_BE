@@ -50,9 +50,9 @@ authRoutes.put(
 // Đăng xuất (xóa refresh token)
 authRoutes.get("/logout", wrapAsync(logoutController));
 
-// // Đăng nhập bằng Google OAuth
+// Đăng nhập bằng Google OAuth
 authRoutes.post("/oauth-google", wrapAsync(oauthGoogleLoginController));
 
-// // Xác minh email
+// Xác minh email
 // authRoutes.get("/verify-email/:token", verifyEmail);
 export default authRoutes;
