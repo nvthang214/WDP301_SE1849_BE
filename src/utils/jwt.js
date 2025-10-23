@@ -9,6 +9,7 @@ config();
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 const refreshSecret = new TextEncoder().encode(process.env.REFRESH_SECRET);
 const ResetToken = new TextEncoder().encode(process.env.RESET_PASSWORD_SECRET);
+const EmailToken = new TextEncoder().encode(process.env.EMAIL_SECRET || process.env.JWT_SECRET);
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export async function generateAccessToken(payload) {
@@ -41,6 +42,17 @@ export const createResetToken = async (userId) => {
 };
 export const verifyResetToken = async (token) => {
   return await jwtVerify(token, ResetToken);
+};
+
+export const createEmailToken = async (userId) => {
+  return await new SignJWT({ userId })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime(TOKEN_EXPIRATION.EMAIL_EXPIRES)
+    .sign(EmailToken);
+};
+
+export const verifyEmailToken = async (token) => {
+  return await jwtVerify(token, EmailToken);
 };
 
 export const verifyGoogleToken = async (idToken) => {
