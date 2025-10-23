@@ -9,6 +9,7 @@ import {
   refreshController,
   registerController,
   resetPasswordController,
+  verifyEmailController,
 } from "../controllers/auth.controller.js";
 import {
   authMiddleware,
@@ -54,5 +55,5 @@ authRoutes.get("/logout", wrapAsync(logoutController));
 authRoutes.post("/oauth-google", wrapAsync(oauthGoogleLoginController));
 
 // Xác minh email
-// authRoutes.get("/verify-email/:token", verifyEmail);
+authRoutes.get("/verify-email/:token", wrapAsync(verifyEmailController));
 export default authRoutes;

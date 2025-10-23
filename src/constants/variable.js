@@ -1,6 +1,6 @@
 export const TOKEN_EXPIRATION = {
   ACCESS_EXPIRES: "30s",
-  REFRESH_EXPIRES: "1m",
+  REFRESH_EXPIRES: "30d",
   EMAIL_EXPIRES: "1d",
   RESET_EXPIRES: "5m",
 };
