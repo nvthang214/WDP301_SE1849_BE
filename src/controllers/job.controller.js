@@ -49,7 +49,7 @@ export const getAllJobs = async (req, res) => {
     .limit(parseInt(limit))
     .populate({ path: 'recruiter', select: 'firstName lastName -_id' })
     .populate({ path: 'category', select: 'name' })
-    .populate({ path: 'company', select: 'name -_id' })
+    .populate({ path: 'company', select: 'name logo' })
     .populate({ path: 'tags', select: 'name -_id' });
 
   const total = await Job.countDocuments(query);
@@ -88,7 +88,7 @@ export const getJobById = async (req, res) => {
   const job = await Job.findById(id)
     .populate({ path: 'recruiter', select: 'username firstName lastName -_id' })
     .populate({ path: 'category', select: 'name' })
-    .populate({ path: 'company', select: 'name' })
+    .populate({ path: 'company', select: 'name logo' })
     .populate({ path: 'tags', select: 'name' });
   if (!job) {
     throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
