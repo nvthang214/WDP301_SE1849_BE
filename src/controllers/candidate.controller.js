@@ -6,7 +6,7 @@ import Application from "../models/Application.js";
 const SUPPORTED_SOCIAL_PLATFORMS = [ "linkedin", "twitter", "facebook", "instagram"];
 
 const PROFILE_SOCIAL_FIELDS = ["linkedin", "twitter", "facebook", "instagram"];
-
+//lọc data và trả về object chỉ chứa các trường hợp lệ
 const sanitizeSocialPayload = (social) => {
   if (!social || typeof social !== "object") return null;
 
