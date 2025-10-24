@@ -77,6 +77,7 @@ export const MESSAGE = {
   CANDIDATE_PROFILE_UPDATE_FAILED: "Cập nhật hồ sơ ứng viên thất bại",
 
   CANDIDATE_PROFILE_ALREADY_EXISTS: "Hồ sơ ứng viên đã tồn tại",
+  CANDIDATE_SOCIAL_ALREADY_EXISTS: "Mạng xã hội của ứng viên đã tồn tại",
 
   /////////////////////////////////////////////////////
   // THÔNG BÁO JOB
