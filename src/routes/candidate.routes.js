@@ -15,7 +15,7 @@ import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
 
 const candidateRoutes = express.Router();
-// candidateRoutes.use(authMiddleware);
+candidateRoutes.use(authMiddleware);
 
 candidateRoutes.get("/profile/:userId", wrapAsync(getCandidateProfile));
 candidateRoutes.post("/profile/:userId", wrapAsync(createCandidateProfile));
