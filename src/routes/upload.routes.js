@@ -14,7 +14,7 @@ import { wrapAsync } from "../middlewares/error.middleware.js";
 import {authMiddleware} from "../middlewares/auth.middleware.js";
 
 const uploadRoutes = express.Router();
-// uploadRoutes.use(authMiddleware);
+uploadRoutes.use(authMiddleware);
 
 uploadRoutes.get("/cv/:userId", wrapAsync(getCandidateCv));
 uploadRoutes.post("/cv/:userId", upload.single("cv"), wrapAsync(addCandidateCv));

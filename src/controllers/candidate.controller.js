@@ -1,35 +1,12 @@
 import Profile from "../models/Profile.js";
 import { MESSAGE } from "../constants/message.js";
 import { toResultError, toResultOk } from "../results/Result.js";
-import User from "../models/User.js";
 import Application from "../models/Application.js";
 
-const SUPPORTED_SOCIAL_PLATFORMS = [
-  "linkedin",
-  "twitter",
-  "facebook",
-  "instagram",
-  "youtube",
-];
+const SUPPORTED_SOCIAL_PLATFORMS = [ "linkedin", "twitter", "facebook", "instagram"];
 
 const PROFILE_SOCIAL_FIELDS = ["linkedin", "twitter", "facebook", "instagram"];
-
-const ensureCandidateUser = async (res, userId) => {
-  const user = await User.findById(userId).populate("role", "name");
-
-  if (!user) {
-    res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
-    return null;
-  }
-
-  if (user.role?.name !== "candidate") {
-    res.json(toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }));
-    return null;
-  }
-
-  return user;
-};
-
+//lọc data và trả về object chỉ chứa các trường hợp lệ
 const sanitizeSocialPayload = (social) => {
   if (!social || typeof social !== "object") return null;
 
@@ -72,9 +49,12 @@ const extractProfilePayload = (payload = {}) => {
 
 export const getCandidateProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     const profile = await Profile.findOne({ user: user._id })
       .populate("tags", "name")
@@ -99,9 +79,12 @@ export const getCandidateProfile = async (req, res) => {
 
 export const createCandidateProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     const existingProfile = await Profile.findOne({ user: user._id });
     if (existingProfile)
@@ -138,9 +121,12 @@ export const createCandidateProfile = async (req, res) => {
 
 export const updateCandidateProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     const profile = await Profile.findOne({ user: user._id });
     if (!profile)
@@ -184,9 +170,12 @@ export const updateCandidateProfile = async (req, res) => {
 
 export const getCandidateSocial = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     const profile = await Profile.findOne({ user: user._id }).select("social");
     if (!profile)
@@ -214,13 +203,18 @@ export const getCandidateSocial = async (req, res) => {
 
 export const addCandidateSocial = async (req, res) => {
   try {
-    const { userId } = req.params;
     const { social } = req.body;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     if (!Array.isArray(social))
-      return res.json(toResultError({ statusCode: 400, msg: MESSAGE.FIELD_REQUIRED }));
+      return res.json(toResultError({ statusCode: 400, msg: MESSAGE.CANDIDATE_SOCIAL_ALREADY_EXISTS }));
 
-    const profile = await Profile.findOne({ user: userId });
+    const profile = await Profile.findOne({ user: user._id });
     if (!profile)
       return res.json(toResultError({ statusCode: 404, msg: MESSAGE.PROFILE_NOT_FOUND }));
 
@@ -237,21 +231,20 @@ export const addCandidateSocial = async (req, res) => {
 
     return res.json(
       toResultOk({
-        msg: MESSAGE.CANDIDATE_SOCIAL_ADD_SUCCESS,
+        msg: MESSAGE.CANDIDATE_SOCIAL_CREATE_SUCCESS,
         data: profile.social,
       })
     );
   } catch (error) {
     console.error(error);
     return res.json(
-      toResultError({ statusCode: 500, msg: MESSAGE.CANDIDATE_SOCIAL_ADD_FAILED })
+      toResultError({ statusCode: 500, msg: MESSAGE.CANDIDATE_SOCIAL_CREATE_FAILED })
     );
   }
 };
 
 export const updateCandidateSocial = async (req, res) => {
   try {
-    const { userId } = req.params;
     const { platform, url } = req.body;
 
     if (!platform || !url)
@@ -259,11 +252,15 @@ export const updateCandidateSocial = async (req, res) => {
 
     if (!SUPPORTED_SOCIAL_PLATFORMS.includes(platform))
       return res.json(
-        toResultError({ statusCode: 400, msg: MESSAGE.UNSUPPORTED_SOCIAL_PLATFORM })
+        toResultError({ statusCode: 400, msg: MESSAGE.CANDIDATE_PROFILE_UPDATE_FAILED})
       );
 
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     const profile = await Profile.findOne({ user: user._id });
     if (!profile)
@@ -288,13 +285,18 @@ export const updateCandidateSocial = async (req, res) => {
 
 export const deleteCandidateSocial = async (req, res) => {
   try {
-    const { userId } = req.params;
     const { platform } = req.body;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     if (!platform)
       return res.json(toResultError({ statusCode: 400, msg: MESSAGE.FIELD_REQUIRED }));
 
-    const profile = await Profile.findOne({ user: userId });
+    const profile = await Profile.findOne({ user: user._id });
     if (!profile)
       return res.json(toResultError({ statusCode: 404, msg: MESSAGE.PROFILE_NOT_FOUND }));
 
@@ -319,9 +321,12 @@ export const deleteCandidateSocial = async (req, res) => {
 
 export const getCandidateAppliedJobs = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     const applications = await Application.find({ candidate: user._id })
       .sort({ createdAt: -1 })
@@ -365,9 +370,12 @@ export const getCandidateAppliedJobs = async (req, res) => {
 
 export const getInfoCandidate = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
     return res.json(
       toResultOk({
         msg: MESSAGE.CANDIDATE_PROFILE_FETCH_SUCCESS,
@@ -384,10 +392,13 @@ export const getInfoCandidate = async (req, res) => {
 
 export const updateInfoCandidate = async (req, res) => {
   try {
-    const { userId } = req.params;
     const { firstName, lastName, phoneNumber } = req.body;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
     if (typeof firstName === "string" && firstName.trim()) user.firstName = firstName.trim();
     if (typeof lastName === "string" && lastName.trim()) user.lastName = lastName.trim();
 

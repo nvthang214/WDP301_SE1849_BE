@@ -13,24 +13,6 @@ const AVATAR_ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const AVATAR_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const AVATAR_CLOUD_FOLDER = "avatar";
 
-const loadCandidateContext = async (userId) => {
-	const user = await User.findById(userId).populate("role", "name");
-	if (!user) {
-		return {
-			error: toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }),
-		};
-	}
-
-	if (user.role?.name !== "candidate") {
-		return {
-			error: toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }),
-		};
-	}
-
-	const profile = await Profile.findOne({ user: user._id });
-	return { user, profile };
-};
-
 const parseCvField = (value) => {
 	if (!value) return null;
 
@@ -285,12 +267,19 @@ const cleanupCloudinaryImage = async (publicId) => {
 export const getCandidateCv = async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const context = await loadCandidateContext(userId);
-		if (context.error) {
-			return res.status(context.error.statusCode).json(context.error);
+		const authUser = req.user;
+		if (!authUser) {
+			const errorResult = toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED });
+			return res.status(errorResult.statusCode).json(errorResult);
 		}
 
-		const { profile } = context;
+		const authUserId = authUser._id?.toString();
+		if (userId && authUserId && authUserId !== userId) {
+			const errorResult = toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN });
+			return res.status(errorResult.statusCode).json(errorResult);
+		}
+
+		const profile = await Profile.findOne({ user: authUser._id });
 		const cvData =
 			profile && profile.cv
 				? formatCvResponse(parseCvField(profile.cv))
@@ -303,7 +292,6 @@ export const getCandidateCv = async (req, res) => {
 			})
 		);
 	} catch (error) {
-		console.error("getCandidateCv", error);
 		return res
 			.status(500)
 			.json(toResultError({ statusCode: 500, msg: MESSAGE.CV_FETCH_FAILED }));
@@ -314,17 +302,24 @@ export const getCandidateCv = async (req, res) => {
 export const addCandidateCv = async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const context = await loadCandidateContext(userId);
-		if (context.error) {
-			return res.status(context.error.statusCode).json(context.error);
+		const authUser = req.user;
+		if (!authUser) {
+			const errorResult = toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED });
+			return res.status(errorResult.statusCode).json(errorResult);
 		}
 
+		const authUserId = authUser._id?.toString();
+		if (userId && authUserId && authUserId !== userId) {
+			const errorResult = toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN });
+			return res.status(errorResult.statusCode).json(errorResult);
+		}
+
+		const profile = await Profile.findOne({ user: authUser._id });
 		const fileValidationError = validateCvFile(req.file);
 		if (fileValidationError) {
 			return res.status(fileValidationError.statusCode).json(fileValidationError);
 		}
 
-		const { profile, user } = context;
 		if (profile && profile.cv) {
 			return res
 				.status(409)
@@ -334,7 +329,7 @@ export const addCandidateCv = async (req, res) => {
 		const uploadResult = await uploadCandidateCvFile(req.file);
 		const payload = buildCvPayload(req.file, uploadResult);
 
-		await persistCv(user._id, profile, payload);
+		await persistCv(authUser._id, profile, payload);
 
 		const responseData = formatCvResponse(payload);
 		return res
@@ -347,7 +342,6 @@ export const addCandidateCv = async (req, res) => {
 				})
 			);
 	} catch (error) {
-		console.error(" addCandidateCv", error);
 		return res
 			.status(500)
 			.json(toResultError({ statusCode: 500, msg: MESSAGE.CV_UPLOAD_FAILED }));
@@ -357,17 +351,24 @@ export const addCandidateCv = async (req, res) => {
 export const updateCandidateCv = async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const context = await loadCandidateContext(userId);
-		if (context.error) {
-			return res.status(context.error.statusCode).json(context.error);
+		const authUser = req.user;
+		if (!authUser) {
+			const errorResult = toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED });
+			return res.status(errorResult.statusCode).json(errorResult);
 		}
 
+		const authUserId = authUser._id?.toString();
+		if (userId && authUserId && authUserId !== userId) {
+			const errorResult = toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN });
+			return res.status(errorResult.statusCode).json(errorResult);
+		}
+
+		const profile = await Profile.findOne({ user: authUser._id });
 		const fileValidationError = validateCvFile(req.file);
 		if (fileValidationError) {
 			return res.status(fileValidationError.statusCode).json(fileValidationError);
 		}
 
-		const { profile, user } = context;
 		if (!profile || !profile.cv) {
 			return res
 				.status(404)
@@ -379,7 +380,7 @@ export const updateCandidateCv = async (req, res) => {
 		const uploadResult = await uploadCandidateCvFile(req.file);
 		const payload = buildCvPayload(req.file, uploadResult);
 
-		await persistCv(user._id, profile, payload);
+		await persistCv(authUser._id, profile, payload);
 
 		await cleanupCloudinaryAsset(
 			existingCv?.publicId || existingCv?.public_id,
@@ -394,7 +395,6 @@ export const updateCandidateCv = async (req, res) => {
 			})
 		);
 	} catch (error) {
-		console.error(" updateCandidateCv", error);
 		return res
 			.status(500)
 			.json(toResultError({ statusCode: 500, msg: MESSAGE.CV_UPDATE_FAILED }));
@@ -404,12 +404,19 @@ export const updateCandidateCv = async (req, res) => {
 export const deleteCandidateCv = async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const context = await loadCandidateContext(userId);
-		if (context.error) {
-			return res.status(context.error.statusCode).json(context.error);
+		const authUser = req.user;
+		if (!authUser) {
+			const errorResult = toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED });
+			return res.status(errorResult.statusCode).json(errorResult);
 		}
 
-		const { profile } = context;
+		const authUserId = authUser._id?.toString();
+		if (userId && authUserId && authUserId !== userId) {
+			const errorResult = toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN });
+			return res.status(errorResult.statusCode).json(errorResult);
+		}
+
+		const profile = await Profile.findOne({ user: authUser._id });
 		if (!profile || !profile.cv) {
 			return res
 				.status(404)
@@ -427,7 +434,6 @@ export const deleteCandidateCv = async (req, res) => {
 
 		return res.json(toResultOk({ msg: MESSAGE.CV_DELETE_SUCCESS }));
 	} catch (error) {
-		console.error(" deleteCandidateCv", error);
 		return res
 			.status(500)
 			.json(toResultError({ statusCode: 500, msg: MESSAGE.CV_DELETE_FAILED }));
@@ -454,7 +460,6 @@ export const getUserAvatar = async (req, res) => {
 			})
 		);
 	} catch (error) {
-		console.error("getUserAvatar", error);
 		return res
 			.status(500)
 			.json(
@@ -500,7 +505,6 @@ export const addUserAvatar = async (req, res) => {
 				})
 			);
 	} catch (error) {
-		console.error(" addUserAvatar", error);
 		return res
 			.status(500)
 			.json(
@@ -534,11 +538,8 @@ export const updateUserAvatar = async (req, res) => {
 
 		const uploadResult = await uploadToCloudinary(req.file.buffer, AVATAR_CLOUD_FOLDER);
 		const payload = buildAvatarPayload(req.file, uploadResult);
-
 		await persistAvatar(user, payload);
-
 		await cleanupCloudinaryImage(resolveAvatarPublicId(existingAvatar));
-
 		return res.json(
 			toResultOk({
 				msg: MESSAGE.AVATAR_UPDATE_SUCCESS,
@@ -546,7 +547,6 @@ export const updateUserAvatar = async (req, res) => {
 			})
 		);
 	} catch (error) {
-		console.error(" updateUserAvatar", error);
 		return res
 			.status(500)
 			.json(
@@ -580,7 +580,6 @@ export const deleteUserAvatar = async (req, res) => {
 
 		return res.json(toResultOk({ msg: MESSAGE.AVATAR_DELETE_SUCCESS }));
 	} catch (error) {
-		console.error(" deleteUserAvatar", error);
 		return res
 			.status(500)
 			.json(
