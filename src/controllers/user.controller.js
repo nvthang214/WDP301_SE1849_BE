@@ -26,10 +26,20 @@ export const getProfile = async (req, res) => {
     }
   }
 
+  // Format response data để match với frontend expectations
+  const responseData = {
+    ...profileData,
+    fullName: `${profileData.firstName} ${profileData.lastName}`.trim(),
+    phone: profileData.phoneNumber,
+    email: profileData.email,
+    // For recruiter, address comes from Profile.location, for candidate from User.address
+    address: user.role.name === "recruiter" ? (profileData.location || "") : (profileData.address || "")
+  };
+
   res.json(
     toResultOk({
       msg: MESSAGE.USER_PROFILE_FETCH_SUCCESS,
-      data: profileData,
+      data: responseData,
     })
   );
 };
@@ -56,7 +66,12 @@ export const updateProfile = async (req, res) => {
   if (lastName) user.lastName = lastName;
   if (phone) user.phoneNumber = phone;
   if (phoneNumber) user.phoneNumber = phoneNumber;
-  if (address) user.address = address;
+  
+  // For candidate, save address to User.address
+  // For recruiter, address will be saved to Profile.location
+  if (user.role.name === "candidate" && address) {
+    user.address = address;
+  }
 
   await user.save();
 
@@ -78,9 +93,15 @@ export const updateProfile = async (req, res) => {
     }
   } else if (user.role.name === "recruiter") {
     const { position, social } = profileDetails;
+    // For recruiter, save address to Profile.location
+    const updateData = { position, social };
+    if (address) {
+      updateData.location = address;
+    }
+    
     const recruiterProfile = await Profile.findOneAndUpdate(
       { user: userId },
-      { position, social },
+      updateData,
       { new: true, upsert: true }
     );
     if (recruiterProfile) {
@@ -94,7 +115,8 @@ export const updateProfile = async (req, res) => {
     fullName: `${profileData.firstName} ${profileData.lastName}`.trim(),
     phone: profileData.phoneNumber,
     email: profileData.email,
-    address: profileData.address || ""
+    // For recruiter, address comes from Profile.location, for candidate from User.address
+    address: user.role.name === "recruiter" ? (profileData.location || "") : (profileData.address || "")
   };
 
   res.json(
@@ -128,10 +150,20 @@ export const getUserById = async (req, res) => {
     }
   }
 
+  // Format response data để match với frontend expectations
+  const responseData = {
+    ...profileData,
+    fullName: `${profileData.firstName} ${profileData.lastName}`.trim(),
+    phone: profileData.phoneNumber,
+    email: profileData.email,
+    // For recruiter, address comes from Profile.location, for candidate from User.address
+    address: user.role.name === "recruiter" ? (profileData.location || "") : (profileData.address || "")
+  };
+
   res.json(
     toResultOk({
       msg: MESSAGE.USER_PROFILE_FETCH_SUCCESS,
-      data: profileData,
+      data: responseData,
     })
   );
 };
@@ -141,14 +173,29 @@ export const getMe = async (req, res) => {
   const user = await User.findById(userId).populate("role").select("-password");
   if (!user) throw new ErrorResponse(404, MESSAGE.USER_NOT_FOUND);
   
-  // Format data để match với frontend expectations
-  const userData = {
-    ...user.toObject(),
-    fullName: `${user.firstName} ${user.lastName}`.trim(),
-    phone: user.phoneNumber,
-    email: user.email,
-    address: user.address || ""
+  let profileData = { ...user.toObject() };
+
+  if (user.role.name === "candidate") {
+    const candidateProfile = await Profile.findOne({ user: userId });
+    if (candidateProfile) {
+      profileData = { ...profileData, ...candidateProfile.toObject() };
+    }
+  } else if (user.role.name === "recruiter") {
+    const recruiterProfile = await Profile.findOne({ user: userId });
+    if (recruiterProfile) {
+      profileData = { ...profileData, ...recruiterProfile.toObject() };
+    }
+  }
+
+  // Format response data để match với frontend expectations
+  const responseData = {
+    ...profileData,
+    fullName: `${profileData.firstName} ${profileData.lastName}`.trim(),
+    phone: profileData.phoneNumber,
+    email: profileData.email,
+    // For recruiter, address comes from Profile.location, for candidate from User.address
+    address: user.role.name === "recruiter" ? (profileData.location || "") : (profileData.address || "")
   };
   
-  res.json(toResultOk({ data: userData }));
+  res.json(toResultOk({ data: responseData }));
 };
