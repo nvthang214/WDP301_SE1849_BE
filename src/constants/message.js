@@ -171,6 +171,11 @@ export const MESSAGE = {
   CANDIDATE_APPLIED_JOBS_FETCH_SUCCESS: "Lấy danh sách công việc đã ứng tuyển thành công",
   CANDIDATE_APPLIED_JOBS_FETCH_FAILED: "Lấy danh sách công việc đã ứng tuyển thất bại",
 
+  // Ứng tuyển công việc
+  APPLY_JOB_SUCCESS: "Ứng tuyển công việc thành công",
+  APPLY_JOB_FAILED: "Ứng tuyển công việc thất bại",
+  ALREADY_APPLIED: "Bạn đã ứng tuyển công việc này rồi",
+
   /////////////////////////////////////////////////////
   /////////////////////////////////////////////////////
 };
