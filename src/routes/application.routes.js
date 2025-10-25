@@ -18,7 +18,7 @@ router.get('/jobs/:jobId/candidates', wrapAsync(getCandidatesInJob));
 router.get('/jobs/:jobId/candidates/filter', wrapAsync(filterCandidatesByStatus));
 
 // Apply for a job - support both POST and GET methods (auth temporarily disabled for testing)
-router.post('/jobs/:jobId/apply', wrapAsync(applyForJob));
+// router.post('/jobs/:jobId/apply', wrapAsync(applyForJob));
 router.get('/jobs/:jobId/apply', wrapAsync(applyForJob));
 
 export default router;
