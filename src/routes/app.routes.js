@@ -46,7 +46,7 @@ appRoutes.use('/companies', companyRoutes);
 
 // Admin routes
 appRoutes.use("/admin", adminRoutes);
-appRoutes.use("/applications", appstatusRoutes);
+// appRoutes.use("/applications", appstatusRoutes);
 appRoutes.use("/companies", companyRoutes);
 
 // Recruiter routes
