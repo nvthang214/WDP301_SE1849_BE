@@ -80,7 +80,8 @@ export const getCompanyById = async (req, res) => {
   const { id } = req.params;
   const company = await Company.findById(id).populate('recruiter', 'firstName lastName email role');
   if (!company) {
-    throw new ErrorResponse(404, MESSAGE.COMPANY_NOT_FOUND);
+    res.json(toResultOk({ msg: MESSAGE.COMPANY_NOT_FOUND, data: null }));
+    return;
   }
   res.json(toResultOk({ msg: MESSAGE.COMPANY_FETCH_SUCCESS, data: company }));
 }

@@ -15,7 +15,7 @@ const companyRoutes = express.Router();
 // Routes có parameter phải đặt SAU routes cụ thể
 // Routes cụ thể phải đặt TRƯỚC routes có parameter
 // get company by recruiter ID
-
+companyRoutes.get('/details/:id', wrapAsync(getCompanyById));
 companyRoutes.use(authMiddleware, recruiterMiddleware);
 companyRoutes.get('/recruiter/my-company', wrapAsync(getCompanyOfRecruiter));
 companyRoutes.get('/recruiter/:recruiterId', wrapAsync(getCompanyByRecruiterId));
