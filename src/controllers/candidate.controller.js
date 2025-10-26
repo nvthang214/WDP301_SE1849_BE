@@ -60,6 +60,93 @@ const buildDocsMap = (docs = []) => {
   return map;
 };
 
+const parsePositiveInt = (value, defaultValue = 6, maxValue = 20) => {
+  let numericValue = Number.NaN;
+
+  if (typeof value === "string" && value.trim()) {
+    numericValue = Number(value);
+  } else if (Array.isArray(value) && value.length) {
+    numericValue = Number(value[0]);
+  } else if (typeof value === "number") {
+    numericValue = value;
+  }
+
+  if (!Number.isFinite(numericValue)) return defaultValue;
+
+  const parsed = Math.floor(numericValue);
+  if (parsed <= 0) return defaultValue;
+
+  if (typeof maxValue === "number" && Number.isFinite(maxValue)) {
+    return Math.min(parsed, maxValue);
+  }
+
+  return parsed;
+};
+
+const formatTopAppliedJob = (job = {}, stat = {}) => {
+  const jobId = normalizeToObjectId(job._id);
+  if (!jobId) return null;
+
+  const companyId = normalizeToObjectId(job?.company?._id || job?.company);
+  const categoryId = normalizeToObjectId(job?.category?._id || job?.category);
+
+  const tags = Array.isArray(job?.tags)
+    ? job.tags
+        .map((tag) => {
+          if (!tag) return null;
+
+          const tagId = normalizeToObjectId(tag?._id || tag);
+          if (!tagId) return null;
+
+          const name = typeof tag === "object" ? tag?.name || "" : "";
+          return {
+            tagId: tagId.toString(),
+            name,
+          };
+        })
+        .filter(Boolean)
+    : [];
+
+  const location = job?.location
+    ? job.location
+    : [job?.city, job?.country]
+        .map((part) => (typeof part === "string" ? part.trim() : ""))
+        .filter(Boolean)
+        .join(", ");
+
+  return {
+    jobId: jobId.toString(),
+    title: job?.title || "",
+    jobType: job?.jobType || "",
+    minSalary: job?.minSalary ?? null,
+    maxSalary: job?.maxSalary ?? null,
+    salaryType: job?.salaryType || null,
+    totalApplicants: stat?.totalApplicants || 0,
+    lastAppliedAt: stat?.lastAppliedAt || null,
+    vacancies: job?.vacancies ?? null,
+    location: location || "",
+    city: job?.city || "",
+    country: job?.country || "",
+    remote: Boolean(job?.remote),
+    company: companyId
+      ? {
+          companyId: companyId.toString(),
+          name: job?.company?.name || "",
+          logo: job?.company?.logo || "",
+        }
+      : null,
+    category: categoryId
+      ? {
+          categoryId: categoryId.toString(),
+          name: job?.category?.name || "",
+        }
+      : null,
+    tags,
+    createdAt: job?.createdAt || null,
+    updatedAt: job?.updatedAt || null,
+  };
+};
+
 const hydrateApplications = async (applications = []) => {
   if (!applications.length) return [];
 
@@ -467,6 +554,150 @@ export const getCandidateAppliedJobs = async (req, res) => {
       toResultError({
         statusCode: 500,
         msg: MESSAGE.CANDIDATE_APPLIED_JOBS_FETCH_FAILED,
+      })
+    );
+  }
+};
+
+export const getTopAppliedJobs = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
+
+    const limit = parsePositiveInt(req.query?.limit, 6, 20);
+    const aggregationLimit = Math.max(limit * 3, limit);
+
+    const topJobStats = await Application.aggregate([
+      {
+        $group: {
+          _id: "$job",
+          totalApplicants: { $sum: 1 },
+          lastAppliedAt: { $max: "$createdAt" },
+        },
+      },
+      {
+        $sort: {
+          totalApplicants: -1,
+          lastAppliedAt: -1,
+          _id: 1,
+        },
+      },
+      {
+        $limit: aggregationLimit,
+      },
+    ]);
+
+    if (!topJobStats.length) {
+      return res.json(
+        toResultOk({
+          msg: MESSAGE.CANDIDATE_TOP_APPLIED_JOBS_FETCH_SUCCESS,
+          data: [],
+        })
+      );
+    }
+
+    const jobIds = collectValidObjectIds(topJobStats.map((item) => item._id));
+
+    if (!jobIds.length) {
+      return res.json(
+        toResultOk({
+          msg: MESSAGE.CANDIDATE_TOP_APPLIED_JOBS_FETCH_SUCCESS,
+          data: [],
+        })
+      );
+    }
+
+    const rawJobs = await Job.find({ _id: { $in: jobIds }, isActive: true }).lean();
+
+    if (!rawJobs.length) {
+      return res.json(
+        toResultOk({
+          msg: MESSAGE.CANDIDATE_TOP_APPLIED_JOBS_FETCH_SUCCESS,
+          data: [],
+        })
+      );
+    }
+
+    const companyIds = collectValidObjectIds(rawJobs.map((job) => job.company));
+    const categoryIds = collectValidObjectIds(rawJobs.map((job) => job.category));
+    const tagIds = collectValidObjectIds(
+      rawJobs.flatMap((job) => (Array.isArray(job?.tags) ? job.tags : []))
+    );
+
+    const [companies, categories, tags] = await Promise.all([
+      companyIds.length
+        ? Company.find({ _id: { $in: companyIds } }).select("name logo").lean()
+        : Promise.resolve([]),
+      categoryIds.length
+        ? Category.find({ _id: { $in: categoryIds } }).select("name").lean()
+        : Promise.resolve([]),
+      tagIds.length
+        ? Tag.find({ _id: { $in: tagIds } }).select("name").lean()
+        : Promise.resolve([]),
+    ]);
+
+    const companyMap = buildDocsMap(companies);
+    const categoryMap = buildDocsMap(categories);
+    const tagMap = buildDocsMap(tags);
+
+    const hydratedJobs = rawJobs.map((job) => {
+      const jobCompanyId = normalizeToObjectId(job.company);
+      const jobCategoryId = normalizeToObjectId(job.category);
+
+      const hydratedTags = Array.isArray(job.tags)
+        ? job.tags
+            .map((tag) => {
+              const tagId = normalizeToObjectId(tag);
+              if (!tagId) return null;
+              const tagDoc = tagMap.get(tagId.toString());
+              if (!tagDoc) return null;
+              return tagDoc;
+            })
+            .filter(Boolean)
+        : [];
+
+      return {
+        ...job,
+        company: jobCompanyId ? companyMap.get(jobCompanyId.toString()) || null : null,
+        category: jobCategoryId ? categoryMap.get(jobCategoryId.toString()) || null : null,
+        tags: hydratedTags,
+      };
+    });
+
+    const jobMap = buildDocsMap(hydratedJobs);
+
+    const topJobs = [];
+    for (const stat of topJobStats) {
+      if (topJobs.length >= limit) break;
+
+      const jobId = normalizeToObjectId(stat?._id);
+      if (!jobId) continue;
+
+      const job = jobMap.get(jobId.toString());
+      if (!job) continue;
+
+      const formatted = formatTopAppliedJob(job, stat);
+      if (!formatted) continue;
+
+      topJobs.push(formatted);
+    }
+
+    return res.json(
+      toResultOk({
+        msg: MESSAGE.CANDIDATE_TOP_APPLIED_JOBS_FETCH_SUCCESS,
+        data: topJobs,
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    return res.json(
+      toResultError({
+        statusCode: 500,
+        msg: MESSAGE.CANDIDATE_TOP_APPLIED_JOBS_FETCH_FAILED,
       })
     );
   }
