@@ -1,48 +1,46 @@
-import mongoose from 'mongoose';
 import { MESSAGE } from '../constants/message.js';
 import ErrorResponse from '../lib/helper/ErrorResponse.js';
 import Tag from '../models/Tag.js';
 import Job from '../models/Job.js';
+import Application from '../models/Application.js';
+import JobFavorite from '../models/JobFavorite.js';
+import Category from '../models/Category.js';
+import Company from '../models/Company.js';
 import { toResultOk } from '../results/Result.js';
 
 
 export const getAllJobs = async (req, res) => {
-  const { search, categoryId, jobType, experience, isActive, page = 1, limit = 15, minSalary, maxSalary, remote } = req.query;
+  const { search, categoryId, jobType, experience, isActive = true, page = 1, limit = 15, minSalary, maxSalary, remote } = req.query;
+  const userId = req.user?._id || null;
 
   let query = {};
 
   if (search) {
     const tags = await Tag.find({ name: { $regex: search, $options: 'i' } }).select('_id');
     const tagIds = tags.map(tag => tag._id);
-
-    // Find companies matching search
-    const Company = (await import('../models/Company.js')).default;
+    const categories = await Category.find({ name: { $regex: search, $options: 'i' } }).select('_id');
+    const categoryIdsFromSearch = categories.map(c => c._id);
     const companies = await Company.find({ name: { $regex: search, $options: 'i' } }).select('_id');
-    const companyIds = companies.map(company => company._id);
+    const companyIdsFromSearch = companies.map(c => c._id);
 
-    // Search in all relevant job fields including company name
     query.$or = [
       { title: { $regex: search, $options: 'i' } },
       { location: { $regex: search, $options: 'i' } },
       { description: { $regex: search, $options: 'i' } },
-      { role: { $regex: search, $options: 'i' } },
-      { jobLevel: { $regex: search, $options: 'i' } },
-      { experience: { $regex: search, $options: 'i' } },
-      { education: { $regex: search, $options: 'i' } },
-      { country: { $regex: search, $options: 'i' } },
-      { city: { $regex: search, $options: 'i' } },
-      { benefits: { $regex: search, $options: 'i' } },
-      { requirements: { $regex: search, $options: 'i' } },
-      { desirable: { $regex: search, $options: 'i' } },
       { tags: { $in: tagIds } },
-      { company: { $in: companyIds } }
+      { category: { $in: categoryIdsFromSearch } },
+      { company: { $in: companyIdsFromSearch } },
+      { city: { $regex: search, $options: 'i' } }
     ];
   }
   if (categoryId) query.category = categoryId;
   if (jobType) query.jobType = jobType;
-  if (experience) query.experience = experience;
-  if (isActive !== undefined) query.isActive = isActive === 'true';
+  if (experience) query.experience = experience; 
   if (remote !== undefined) query.remote = remote === 'true';
+  // Apply isActive as an AND filter
+  if (typeof isActive !== 'undefined') {
+    query.isActive = (typeof isActive === 'string') ? (isActive === 'true') : !!isActive;
+  }
 
   if (minSalary || maxSalary) {
     query.$and = query.$and || [];
@@ -66,7 +64,23 @@ export const getAllJobs = async (req, res) => {
     .populate({ path: 'recruiter', select: 'firstName lastName -_id' })
     .populate({ path: 'category', select: 'name' })
     .populate({ path: 'company', select: 'name logo' })
-    .populate({ path: 'tags', select: 'name -_id' });
+    .populate({ path: 'tags', select: 'name -_id' })
+    .lean();
+
+  // Add isFavorite flag for each job based on JobFavorite by userId
+  let favoriteSet = new Set();
+  if (userId && jobs.length) {
+    const jobIds = jobs.map(j => j._id);
+    const favorites = await JobFavorite.find({ candidate: userId, job: { $in: jobIds } })
+      .select('job')
+      .lean();
+    favoriteSet = new Set(favorites.map(f => String(f.job)));
+  }
+
+  const jobsWithFavorite = jobs.map(j => ({
+    ...j,
+    isFavorite: favoriteSet.has(String(j._id))
+  }));
 
   const total = await Job.countDocuments(query);
 
@@ -74,7 +88,7 @@ export const getAllJobs = async (req, res) => {
     toResultOk({
       msg: MESSAGE.JOB_FETCH_SUCCESS,
       data: {
-        jobs,
+        jobs: jobsWithFavorite,
         totalPages: Math.ceil(total / limit)
       },
       pagination: {
@@ -85,6 +99,27 @@ export const getAllJobs = async (req, res) => {
       }
     })
   );
+}
+
+// toggle favorite a job
+export const toggleFavoriteAJob = async (req, res) => {
+  const candidateId = req?.user._id;
+  const { jobId } = req.params;
+  const job = await Job.findById(jobId);
+  if (!job) {
+    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
+  }
+  const existingFavorite = await JobFavorite.findOne({ candidate: candidateId, job: jobId });
+  if (existingFavorite) {
+    // If already favorited, remove it
+    await JobFavorite.deleteOne({ _id: existingFavorite._id });
+    res.json(toResultOk({ msg: MESSAGE.JOB_FAVORITE_REMOVED }));
+  } else {
+    // If not favorited, create a new favorite
+    const newFavorite = new JobFavorite({ candidate: candidateId, job: jobId });
+    await newFavorite.save();
+    res.json(toResultOk({ msg: MESSAGE.JOB_FAVORITE_ADDED }));
+  }
 }
 
 // create new job
@@ -101,18 +136,29 @@ export const createJob = async (req, res) => {
 // get job by id
 export const getJobById = async (req, res) => {
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
-  }
+
+  const userId = req.user?._id || null;
+
   const job = await Job.findById(id)
     .populate({ path: 'recruiter', select: 'username firstName lastName -_id' })
     .populate({ path: 'category', select: 'name' })
+    .populate({ path: 'company', select: 'name logo' })
     .populate({ path: 'company', select: 'name logo' })
     .populate({ path: 'tags', select: 'name' });
   if (!job) {
     throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
   }
-  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: job }));
+  // Determine favorite flag for this job
+  let isFavorite = false;
+  if (userId) {
+    const fav = await JobFavorite.exists({ candidate: userId, job: id });
+    isFavorite = !!fav;
+  }
+
+  const jobObj = job.toObject();
+  jobObj.isFavorite = isFavorite;
+
+  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobObj }));
 }
 
 // update job by id
@@ -145,3 +191,10 @@ export const getJobsByRecruiterId = async (req, res) => {
   const jobs = await Job.find({ recruiter: recruiterId });
   res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobs }));
 }
+
+// get number of application of a job by job id
+export const getNumberOfApplicationsByJobId = async (req, res) => {
+  const { jobId } = req.params;
+  const count = await Application.countDocuments({ job: jobId });
+  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: { count } }));
+};

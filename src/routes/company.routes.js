@@ -24,6 +24,7 @@ companyRoutes.get("/", wrapAsync(getAllCompanies));
 // get companies by location
 companyRoutes.get("/location", wrapAsync(getAllCompaniesByLocation));
 
+companyRoutes.get('/details/:id', wrapAsync(getCompanyById));
 companyRoutes.use(authMiddleware, recruiterMiddleware);
 companyRoutes.get("/recruiter/my-company", wrapAsync(getCompanyOfRecruiter));
 companyRoutes.get("/recruiter/:recruiterId", wrapAsync(getCompanyByRecruiterId));
