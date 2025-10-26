@@ -279,3 +279,102 @@ export const deleteJob = async (req, res) => {
     });
   }
 };
+
+// Get overview statistics
+export const getOverviewStats = async (req, res) => {
+  try {
+    // Get user statistics
+    const totalUsers = await User.countDocuments();
+    const activeUsers = await User.countDocuments({ isActive: true });
+    const bannedUsers = await User.countDocuments({ isActive: false });
+    
+    // Get upgrade request statistics
+    const UpgradeRequest = (await import("../models/UpgradeRequest.js")).default;
+    const totalUpgradeRequests = await UpgradeRequest.countDocuments();
+    const pendingRequests = await UpgradeRequest.countDocuments({ status: 'pending' });
+    const approvedRequests = await UpgradeRequest.countDocuments({ status: 'approved' });
+    const rejectedRequests = await UpgradeRequest.countDocuments({ status: 'rejected' });
+    
+    // Get job statistics
+    const totalJobs = await Job.countDocuments();
+    const activeJobs = await Job.countDocuments({ isActive: true });
+    const inactiveJobs = await Job.countDocuments({ isActive: false });
+    
+    // Get company statistics
+    const totalCompanies = await Company.countDocuments();
+
+    res.status(200).json({
+      success: true,
+      message: "Overview statistics retrieved successfully",
+      data: {
+        users: {
+          total: totalUsers,
+          active: activeUsers,
+          banned: bannedUsers,
+        },
+        upgradeRequests: {
+          total: totalUpgradeRequests,
+          pending: pendingRequests,
+          approved: approvedRequests,
+          rejected: rejectedRequests,
+        },
+        jobs: {
+          total: totalJobs,
+          active: activeJobs,
+          inactive: inactiveJobs,
+        },
+        companies: {
+          total: totalCompanies,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error getting overview stats:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+// Get user registration statistics by month
+export const getUserRegistrationStats = async (req, res) => {
+  try {
+    // Get year from query params or use current year
+    const year = req.query?.year ? parseInt(req.query.year) : new Date().getFullYear();
+    const monthlyStats = [];
+
+    // Get stats for each month (1-12)
+    for (let month = 1; month <= 12; month++) {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+      
+      const count = await User.countDocuments({
+        createdAt: {
+          $gte: startDate,
+          $lte: endDate,
+        },
+      });
+
+      monthlyStats.push({
+        month: month,
+        monthName: new Date(year, month - 1, 1).toLocaleString('vi-VN', { month: 'long' }),
+        count: count,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User registration statistics retrieved successfully",
+      data: monthlyStats,
+    });
+  } catch (error) {
+    console.error("Error getting user registration stats:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};

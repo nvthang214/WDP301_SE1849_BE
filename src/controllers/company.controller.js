@@ -88,6 +88,18 @@ export const getCompanyById = async (req, res) => {
 // update company by id
 export const updateCompany = async (req, res) => {
   const { id } = req.params;
+  
+  // Validate phone number (must be 10 digits)
+  if (req.body.contact && req.body.contact.phone) {
+    const phoneToValidate = req.body.contact.phone;
+    const cleanPhone = phoneToValidate.replace(/\s+/g, '').replace(/[^\d]/g, '');
+    if (cleanPhone.length !== 10 || !/^[0-9]+$/.test(cleanPhone)) {
+      throw new ErrorResponse(400, MESSAGE.COMPANY_PHONE_INVALID);
+    }
+    // Save clean phone
+    req.body.contact.phone = cleanPhone;
+  }
+  
   const updatedCompany = await Company.findByIdAndUpdate(id, req.body, { new: true })
 .populate('recruiter', 'firstName lastName email role');
   if (!updatedCompany) {

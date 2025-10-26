@@ -8,6 +8,7 @@ import authRoutes from "./auth.routes.js";
 import adminRoutes from "./admin.routes.js";
 import appstatusRoutes from "./appstatus.routes.js";
 import candidateRoutes from "./candidate.routes.js";
+import recruiterRoutes from "./recruiter.routes.js";
 import uploadRoutes from "./upload.routes.js";
 
 
@@ -43,5 +44,8 @@ appRoutes.use('/companies', companyRoutes);
 appRoutes.use("/admin", adminRoutes);
 appRoutes.use("/applications", appstatusRoutes);
 appRoutes.use("/companies", companyRoutes);
+
+// Recruiter routes
+appRoutes.use("/recruiter", recruiterRoutes);
 
 export default appRoutes;

@@ -3,6 +3,8 @@ import User from "../models/User.js";
 import Role from "../models/Role.js";
 import Company from "../models/Company.js";
 import fs from "fs";
+import validator from "validator";
+import { MESSAGE } from "../constants/message.js";
 
 // User tạo upgrade request
 export const createUpgradeRequest = async (req, res) => {
@@ -39,6 +41,30 @@ export const createUpgradeRequest = async (req, res) => {
         success: false,
         message: "Company name is required",
       });
+    }
+    
+    // Validate phone number (must be 10 digits)
+    if (companyInfo.contact && companyInfo.contact.phone) {
+      const phoneToValidate = companyInfo.contact.phone;
+      const cleanPhone = phoneToValidate.replace(/\s+/g, '').replace(/[^\d]/g, '');
+      if (cleanPhone.length !== 10 || !/^[0-9]+$/.test(cleanPhone)) {
+        return res.status(400).json({
+          success: false,
+          message: MESSAGE.COMPANY_PHONE_INVALID,
+        });
+      }
+      // Save clean phone
+      companyInfo.contact.phone = cleanPhone;
+    }
+    
+    // Validate email format
+    if (companyInfo.contact && companyInfo.contact.email) {
+      if (!validator.isEmail(companyInfo.contact.email)) {
+        return res.status(400).json({
+          success: false,
+          message: MESSAGE.COMPANY_EMAIL_INVALID,
+        });
+      }
     }
     
     // Kiểm tra file business license
