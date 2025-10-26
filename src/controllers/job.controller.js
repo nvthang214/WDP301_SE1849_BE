@@ -1,12 +1,15 @@
 import { MESSAGE } from '../constants/message.js';
+import mongoose from 'mongoose';
 import ErrorResponse from '../lib/helper/ErrorResponse.js';
 import Tag from '../models/Tag.js';
 import Job from '../models/Job.js';
+import JobFavorite from '../models/JobFavorite.js';
 import { toResultOk } from '../results/Result.js';
 
 
 export const getAllJobs = async (req, res) => {
-  const { search, categoryId, jobType, experience, isActive, page = 1, limit = 15, minSalary, maxSalary, remote } = req.query;
+  const { search, categoryId, jobType, experience, isActive = true, page = 1, limit = 15, minSalary, maxSalary, remote } = req.query;
+  const userId = req.user?._id || null;
 
   let query = {};
 
@@ -19,13 +22,15 @@ export const getAllJobs = async (req, res) => {
       { location: { $regex: search, $options: 'i' } },
       { description: { $regex: search, $options: 'i' } },
       { location: { $regex: search, $options: 'i' } },
-      { tags: { $in: tagIds } }
+      { tags: { $in: tagIds } },
+      { company: { $regex: search, $options: 'i' } },
+      { city: { $regex: search, $options: 'i' } },
+      { isActive: isActive }
     ];
   }
   if (categoryId) query.category = categoryId;
   if (jobType) query.jobType = jobType;
-  if (experience) query.experience = experience;
-  if (isActive !== undefined) query.isActive = isActive === 'true';
+  if (experience) query.experience = experience; 
   if (remote !== undefined) query.remote = remote === 'true';
 
   if (minSalary || maxSalary) {
@@ -50,7 +55,23 @@ export const getAllJobs = async (req, res) => {
     .populate({ path: 'recruiter', select: 'firstName lastName -_id' })
     .populate({ path: 'category', select: 'name' })
     .populate({ path: 'company', select: 'name logo' })
-    .populate({ path: 'tags', select: 'name -_id' });
+    .populate({ path: 'tags', select: 'name -_id' })
+    .lean();
+
+  // Add isFavorite flag for each job based on JobFavorite by userId
+  let favoriteSet = new Set();
+  if (userId && mongoose.Types.ObjectId.isValid(userId) && jobs.length) {
+    const jobIds = jobs.map(j => j._id);
+    const favorites = await JobFavorite.find({ candidate: userId, job: { $in: jobIds } })
+      .select('job')
+      .lean();
+    favoriteSet = new Set(favorites.map(f => String(f.job)));
+  }
+
+  const jobsWithFavorite = jobs.map(j => ({
+    ...j,
+    isFavorite: favoriteSet.has(String(j._id))
+  }));
 
   const total = await Job.countDocuments(query);
 
@@ -58,7 +79,7 @@ export const getAllJobs = async (req, res) => {
     toResultOk({
       msg: MESSAGE.JOB_FETCH_SUCCESS,
       data: {
-        jobs,
+        jobs: jobsWithFavorite,
         totalPages: Math.ceil(total / limit)
       },
       pagination: {
@@ -69,6 +90,27 @@ export const getAllJobs = async (req, res) => {
       }
     })
   );
+}
+
+// toggle favorite a job
+export const toggleFavoriteAJob = async (req, res) => {
+  const candidateId = req?.user._id;
+  const { jobId } = req.params;
+  const job = await Job.findById(jobId);
+  if (!job) {
+    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
+  }
+  const existingFavorite = await JobFavorite.findOne({ candidate: candidateId, job: jobId });
+  if (existingFavorite) {
+    // If already favorited, remove it
+    await JobFavorite.deleteOne({ _id: existingFavorite._id });
+    res.json(toResultOk({ msg: MESSAGE.JOB_FAVORITE_REMOVED }));
+  } else {
+    // If not favorited, create a new favorite
+    const newFavorite = new JobFavorite({ candidate: candidateId, job: jobId });
+    await newFavorite.save();
+    res.json(toResultOk({ msg: MESSAGE.JOB_FAVORITE_ADDED }));
+  }
 }
 
 // create new job

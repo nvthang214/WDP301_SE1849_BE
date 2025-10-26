@@ -4,9 +4,9 @@ import {
     createJob,
     getJobById,
     updateJob,
-    // deleteJob,
     deactivateJob,
-    getJobsByRecruiterId
+    getJobsByRecruiterId,
+    toggleFavoriteAJob
 } from '../controllers/job.controller.js';
 import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
@@ -17,11 +17,23 @@ const jobRoutes = express.Router();
 
 // get all jobs
 jobRoutes.get('/list', wrapAsync(getAllJobs));
-// get job by id
-jobRoutes.get('/:id', wrapAsync(getJobById));
 
-// use route middleware
-jobRoutes.use(authMiddleware, recruiterMiddleware);
+// get job by id
+jobRoutes.get('/details/:id', wrapAsync(getJobById));
+
+///////////////////////////////////////////////////////////////////
+// use auth middleware
+jobRoutes.use(authMiddleware);
+
+// get favorite jobs
+jobRoutes.get('/list/favorite-flag', wrapAsync(getAllJobs));
+
+// favorite a job
+jobRoutes.post('/favorite/:jobId', wrapAsync(toggleFavoriteAJob));
+
+/////////////////////////////////////////////////////////////////
+// use recruiter middleware
+jobRoutes.use(recruiterMiddleware);
 
 // create new job
 jobRoutes.post('/post', wrapAsync(createJob));
