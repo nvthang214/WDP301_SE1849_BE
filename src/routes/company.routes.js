@@ -7,6 +7,7 @@ import {
   getCompanyOfRecruiter,
   getCompanyByRecruiterId,
   getAllCompanies,
+  getAllCompaniesByLocation,
 } from "../controllers/company.controller.js";
 import { wrapAsync } from "../middlewares/error.middleware.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
@@ -19,6 +20,9 @@ const companyRoutes = express.Router();
 
 // get all companies
 companyRoutes.get("/", wrapAsync(getAllCompanies));
+
+// get companies by location
+companyRoutes.get("/location", wrapAsync(getAllCompaniesByLocation));
 
 companyRoutes.use(authMiddleware, recruiterMiddleware);
 companyRoutes.get("/recruiter/my-company", wrapAsync(getCompanyOfRecruiter));

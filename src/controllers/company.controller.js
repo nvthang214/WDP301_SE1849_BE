@@ -13,11 +13,11 @@ export const getAllCompanies = async (req, res) => {
     query.$or = [
       { name: { $regex: search, $options: "i" } },
       { description: { $regex: search, $options: "i" } },
-      { location: { $regex: search, $options: "i" } },
+      { address: { $regex: search, $options: "i" } },
     ];
   }
   if (industry) query.industry = { $regex: industry, $options: "i" };
-  if (location) query.location = { $regex: location, $options: "i" };
+  if (location) query.address = { $regex: location, $options: "i" };
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const companies = await Company.find(query).skip(skip).limit(parseInt(limit));
   const total = await Company.countDocuments(query);
@@ -29,6 +29,47 @@ export const getAllCompanies = async (req, res) => {
       msg: MESSAGE.COMPANY_FETCH_SUCCESS,
       data: {
         companies,
+        totalPages: Math.ceil(total / limit),
+      },
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / limit),
+      },
+    })
+  );
+};
+
+// Get all companies by location with pagination
+export const getAllCompaniesByLocation = async (req, res) => {
+  const { location, page = 1, limit = 15 } = req.query;
+  
+  // Validate location parameter
+  if (!location || location.trim() === '') {
+    throw new ErrorResponse(400, "Location parameter is required");
+  }
+  
+  // Build query object for location search
+  let query = {
+    address: { $regex: location.trim(), $options: "i" }
+  };
+  
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const companies = await Company.find(query)
+    .skip(skip)
+    .limit(parseInt(limit))
+    .select('name address industry logo description contact website');
+    
+  const total = await Company.countDocuments(query);
+  
+  // Trả về kết quả (có thể là mảng rỗng)
+  res.json(
+    toResultOk({
+      msg: companies.length > 0 ? MESSAGE.COMPANY_FETCH_SUCCESS : "No companies found in this location",
+      data: {
+        companies,
+        location: location.trim(),
         totalPages: Math.ceil(total / limit),
       },
       pagination: {
