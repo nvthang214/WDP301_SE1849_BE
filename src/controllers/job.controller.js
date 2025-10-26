@@ -1,5 +1,4 @@
 import { MESSAGE } from '../constants/message.js';
-import mongoose from 'mongoose';
 import ErrorResponse from '../lib/helper/ErrorResponse.js';
 import Tag from '../models/Tag.js';
 import Job from '../models/Job.js';
@@ -60,7 +59,7 @@ export const getAllJobs = async (req, res) => {
 
   // Add isFavorite flag for each job based on JobFavorite by userId
   let favoriteSet = new Set();
-  if (userId && mongoose.Types.ObjectId.isValid(userId) && jobs.length) {
+  if (userId && jobs.length) {
     const jobIds = jobs.map(j => j._id);
     const favorites = await JobFavorite.find({ candidate: userId, job: { $in: jobIds } })
       .select('job')
@@ -127,6 +126,9 @@ export const createJob = async (req, res) => {
 // get job by id
 export const getJobById = async (req, res) => {
   const { id } = req.params;
+
+  const userId = req.user?._id || null;
+
   const job = await Job.findById(id)
     .populate({ path: 'recruiter', select: 'username firstName lastName -_id' })
     .populate({ path: 'category', select: 'name' })
@@ -135,7 +137,17 @@ export const getJobById = async (req, res) => {
   if (!job) {
     throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
   }
-  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: job }));
+  // Determine favorite flag for this job
+  let isFavorite = false;
+  if (userId) {
+    const fav = await JobFavorite.exists({ candidate: userId, job: id });
+    isFavorite = !!fav;
+  }
+
+  const jobObj = job.toObject();
+  jobObj.isFavorite = isFavorite;
+
+  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobObj }));
 }
 
 // update job by id

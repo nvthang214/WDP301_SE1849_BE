@@ -26,7 +26,10 @@ jobRoutes.get('/details/:id', wrapAsync(getJobById));
 jobRoutes.use(authMiddleware);
 
 // get favorite jobs
-jobRoutes.get('/list/favorite-flag', wrapAsync(getAllJobs));
+jobRoutes.get('/list/isFavorite', wrapAsync(getAllJobs));
+
+// get favorite job details when logged in
+jobRoutes.get('/details/:id/isFavorite', wrapAsync(getJobById));
 
 // favorite a job
 jobRoutes.post('/favorite/:jobId', wrapAsync(toggleFavoriteAJob));
