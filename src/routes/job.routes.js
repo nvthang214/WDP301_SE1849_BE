@@ -6,7 +6,8 @@ import {
     updateJob,
     deactivateJob,
     getJobsByRecruiterId,
-    toggleFavoriteAJob
+    toggleFavoriteAJob,
+    getNumberOfApplicationsByJobId
 } from '../controllers/job.controller.js';
 import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
@@ -37,6 +38,8 @@ jobRoutes.post('/favorite/:jobId', wrapAsync(toggleFavoriteAJob));
 /////////////////////////////////////////////////////////////////
 // use recruiter middleware
 jobRoutes.use(recruiterMiddleware);
+// get number of applications of a job by job id
+jobRoutes.get('/applications/count/:jobId', wrapAsync(getNumberOfApplicationsByJobId));
 
 // create new job
 jobRoutes.post('/post', wrapAsync(createJob));

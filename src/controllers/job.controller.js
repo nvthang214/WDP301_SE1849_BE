@@ -1,8 +1,8 @@
-import mongoose from 'mongoose';
 import { MESSAGE } from '../constants/message.js';
 import ErrorResponse from '../lib/helper/ErrorResponse.js';
 import Tag from '../models/Tag.js';
 import Job from '../models/Job.js';
+import Application from '../models/Application.js';
 import JobFavorite from '../models/JobFavorite.js';
 import { toResultOk } from '../results/Result.js';
 
@@ -182,3 +182,10 @@ export const getJobsByRecruiterId = async (req, res) => {
   const jobs = await Job.find({ recruiter: recruiterId });
   res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobs }));
 }
+
+// get number of application of a job by job id
+export const getNumberOfApplicationsByJobId = async (req, res) => {
+  const { jobId } = req.params;
+  const count = await Application.countDocuments({ job: jobId });
+  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: { count } }));
+};
