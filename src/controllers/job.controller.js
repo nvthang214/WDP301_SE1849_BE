@@ -4,6 +4,8 @@ import Tag from '../models/Tag.js';
 import Job from '../models/Job.js';
 import Application from '../models/Application.js';
 import JobFavorite from '../models/JobFavorite.js';
+import Category from '../models/Category.js';
+import Company from '../models/Company.js';
 import { toResultOk } from '../results/Result.js';
 
 
@@ -16,22 +18,29 @@ export const getAllJobs = async (req, res) => {
   if (search) {
     const tags = await Tag.find({ name: { $regex: search, $options: 'i' } }).select('_id');
     const tagIds = tags.map(tag => tag._id);
+    const categories = await Category.find({ name: { $regex: search, $options: 'i' } }).select('_id');
+    const categoryIdsFromSearch = categories.map(c => c._id);
+    const companies = await Company.find({ name: { $regex: search, $options: 'i' } }).select('_id');
+    const companyIdsFromSearch = companies.map(c => c._id);
 
     query.$or = [
       { title: { $regex: search, $options: 'i' } },
       { location: { $regex: search, $options: 'i' } },
       { description: { $regex: search, $options: 'i' } },
-      { location: { $regex: search, $options: 'i' } },
       { tags: { $in: tagIds } },
-      { company: { $regex: search, $options: 'i' } },
-      { city: { $regex: search, $options: 'i' } },
-      { isActive: isActive }
+      { category: { $in: categoryIdsFromSearch } },
+      { company: { $in: companyIdsFromSearch } },
+      { city: { $regex: search, $options: 'i' } }
     ];
   }
   if (categoryId) query.category = categoryId;
   if (jobType) query.jobType = jobType;
   if (experience) query.experience = experience; 
   if (remote !== undefined) query.remote = remote === 'true';
+  // Apply isActive as an AND filter
+  if (typeof isActive !== 'undefined') {
+    query.isActive = (typeof isActive === 'string') ? (isActive === 'true') : !!isActive;
+  }
 
   if (minSalary || maxSalary) {
     query.$and = query.$and || [];

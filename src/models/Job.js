@@ -31,7 +31,7 @@ const JobSchema = new mongoose.Schema({
   jobType: { 
     type: String, 
     default: "FULL-TIME", 
-    enum: ["FULL-TIME", "PART-TIME", "CONTRACT", "TEMPORARY", "INTERNSHIP", "VOLUNTEER", "OTHER"] 
+    enum: ["FULL-TIME", "PART-TIME", "CONTRACT BASE", "TEMPORARY", "INTERNSHIP", "VOLUNTEER", "OTHER"] 
   },
   vacancies: { type: Number },
   expiration: { type: Date },
