@@ -15,12 +15,27 @@ export const getAllJobs = async (req, res) => {
     const tags = await Tag.find({ name: { $regex: search, $options: 'i' } }).select('_id');
     const tagIds = tags.map(tag => tag._id);
 
+    // Find companies matching search
+    const Company = (await import('../models/Company.js')).default;
+    const companies = await Company.find({ name: { $regex: search, $options: 'i' } }).select('_id');
+    const companyIds = companies.map(company => company._id);
+
+    // Search in all relevant job fields including company name
     query.$or = [
       { title: { $regex: search, $options: 'i' } },
       { location: { $regex: search, $options: 'i' } },
       { description: { $regex: search, $options: 'i' } },
-      { location: { $regex: search, $options: 'i' } },
-      { tags: { $in: tagIds } }
+      { role: { $regex: search, $options: 'i' } },
+      { jobLevel: { $regex: search, $options: 'i' } },
+      { experience: { $regex: search, $options: 'i' } },
+      { education: { $regex: search, $options: 'i' } },
+      { country: { $regex: search, $options: 'i' } },
+      { city: { $regex: search, $options: 'i' } },
+      { benefits: { $regex: search, $options: 'i' } },
+      { requirements: { $regex: search, $options: 'i' } },
+      { desirable: { $regex: search, $options: 'i' } },
+      { tags: { $in: tagIds } },
+      { company: { $in: companyIds } }
     ];
   }
   if (categoryId) query.category = categoryId;
