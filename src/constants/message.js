@@ -23,6 +23,10 @@ export const MESSAGE = {
   PASSWORD_TOO_SHORT: "Mật khẩu phải có ít nhất 6 ký tự",
   EMAIL_INVALID: "Email không hợp lệ",
   PHONENUMBER_INVALID: "Số điện thoại không hợp lệ",
+  PHONE_MUST_BE_10_DIGITS: "Số điện thoại phải có đúng 10 chữ số",
+  EMAIL_FORMAT_INVALID: "Email không đúng định dạng",
+  COMPANY_PHONE_INVALID: "Số điện thoại công ty phải có đúng 10 chữ số",
+  COMPANY_EMAIL_INVALID: "Email công ty không đúng định dạng",
 
   USERNAME_EXISTED: "Tên đăng nhập đã tồn tại",
   EMAIL_EXISTED: "Email đã tồn tại",
