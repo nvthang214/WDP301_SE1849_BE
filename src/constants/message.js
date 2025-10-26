@@ -46,6 +46,13 @@ export const MESSAGE = {
   FORGOT_PASSWORD_BODY:
     "Bạn đã yêu cầu lấy lại mật khẩu. Vui lòng kiểm tra email để đặt lại mật khẩu.",
   PROFILE_NOT_FOUND: "Không tìm thấy hồ sơ người dùng",
+  EMAIL_VERIFY_SUCCESS: "Xác thực email thành công",
+  EMAIL_ALREADY_VERIFIED: "Email đã được xác thực",
+  EMAIL_VERIFY_SUBJECT: "Xác thực địa chỉ email",
+  EMAIL_VERIFY_BODY: "Vui lòng nhấn vào liên kết trong email để xác thực tài khoản.",
+  REGISTER_VERIFY_SENT: "Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản.",
+  EMAIL_NOT_VERIFIED: "Email chưa được xác thực. Vui lòng kiểm tra email.",
+  ACCOUNT_NOT_ACTIVE: "Tài khoản chưa được kích hoạt. Vui lòng xác thực email.",
 
   // THÔNG BÁO CANDIDATE
   CANDIDATE_SOCIAL_FETCH_SUCCESS: "Lấy thông tin mạng xã hội của ứng viên thành công",
@@ -70,6 +77,7 @@ export const MESSAGE = {
   CANDIDATE_PROFILE_UPDATE_FAILED: "Cập nhật hồ sơ ứng viên thất bại",
 
   CANDIDATE_PROFILE_ALREADY_EXISTS: "Hồ sơ ứng viên đã tồn tại",
+  CANDIDATE_SOCIAL_ALREADY_EXISTS: "Mạng xã hội của ứng viên đã tồn tại",
 
   /////////////////////////////////////////////////////
   // THÔNG BÁO JOB
@@ -163,20 +171,11 @@ export const MESSAGE = {
   CANDIDATE_APPLIED_JOBS_FETCH_SUCCESS: "Lấy danh sách công việc đã ứng tuyển thành công",
   CANDIDATE_APPLIED_JOBS_FETCH_FAILED: "Lấy danh sách công việc đã ứng tuyển thất bại",
 
+  // Ứng tuyển công việc
+  APPLY_JOB_SUCCESS: "Ứng tuyển công việc thành công",
+  APPLY_JOB_FAILED: "Ứng tuyển công việc thất bại",
+  ALREADY_APPLIED: "Bạn đã ứng tuyển công việc này rồi",
+
   /////////////////////////////////////////////////////
-  // THÔNG BÁO COMPANY
-  COMPANY_NOT_FOUND: "Không tìm thấy công ty",
-  // CREATE COMPANY
-  COMPANY_CREATE_SUCCESS: "Tạo công ty thành công",
-  COMPANY_CREATE_FAILED: "Tạo công ty thất bại",
-  // FETCH COMPANIES
-  COMPANY_FETCH_SUCCESS: "Lấy danh sách công ty thành công",
-  COMPANY_FETCH_FAILED: "Lấy danh sách công ty thất bại",
-  // UPDATE COMPANY
-  COMPANY_UPDATE_SUCCESS: "Cập nhật công ty thành công",
-  COMPANY_UPDATE_FAILED: "Cập nhật công ty thất bại",
-  // DELETE COMPANY
-  COMPANY_DELETE_SUCCESS: "Xóa công ty thành công",
-  COMPANY_DELETE_FAILED: "Xóa công ty thất bại",
-  ////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////
 };

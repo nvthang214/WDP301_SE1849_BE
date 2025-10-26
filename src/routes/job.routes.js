@@ -17,6 +17,7 @@ const jobRoutes = express.Router();
 
 // get all jobs
 jobRoutes.get('/', wrapAsync(getAllJobs));
+jobRoutes.get('/list', wrapAsync(getAllJobs));
 // get job by id
 jobRoutes.get('/:id', wrapAsync(getJobById));
 

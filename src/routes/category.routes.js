@@ -6,13 +6,15 @@ import {
 } from '../controllers/category.controller.js';
 import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
+import { adminMiddleware } from '../middlewares/admin.middleware.js';
 
 const categoryRouter = express.Router();
-categoryRouter.use(authMiddleware);
+
 
 // Public route to get all categories
 categoryRouter.get('/', wrapAsync(getAllCategories));
 
+categoryRouter.use(authMiddleware, adminMiddleware);
 // create new category
 categoryRouter.post('/create', wrapAsync(createCategory));
 // update category by id

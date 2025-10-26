@@ -7,8 +7,10 @@ import User from "../models/User.js";
 import { toResultOk } from "../results/Result.js";
 import {
   createResetToken,
+  createEmailToken,
   generateAccessToken,
   generateRefreshToken,
+  verifyEmailToken,
   verifyGoogleToken,
   verifyRefreshToken,
 } from "../utils/jwt.js";
@@ -33,16 +35,25 @@ export const registerController = async (req, res) => {
     password,
     firstName,
     lastName,
+    isActive: false,
   });
 
   await newUser.save();
 
-  return res.status(201).json(
-    toResultOk({
-      msg: MESSAGE.REGISTER_SUCCESS,
-      statusCode: 201,
-    })
+  // Tạo token xác thực email và gửi mail
+  const emailToken = await createEmailToken(newUser._id.toString());
+  const verifyLink = `${process.env.CLIENT_URL}/verify-email?token=${emailToken}`;
+  const option = mailOptions(
+    email,
+    MESSAGE.EMAIL_VERIFY_SUBJECT,
+    `${MESSAGE.EMAIL_VERIFY_BODY}: <a href="${verifyLink}">${verifyLink}</a>`
   );
+
+  sendMail(option, (error) => {
+    if (error) throw new ErrorResponse(500, MESSAGE.SEND_MAIL_ERROR);
+  });
+
+  return res.status(201).json(toResultOk({ msg: MESSAGE.REGISTER_VERIFY_SENT, statusCode: 201 }));
 };
 
 /**
@@ -56,6 +67,10 @@ export const loginController = async (req, res) => {
   const user = await User.findOne({ username });
   if (!user || !(await user.comparePassword(password)))
     throw new ErrorResponse(401, MESSAGE.LOGIN_FAILED);
+
+  if (!user.isEmailVerified) throw new ErrorResponse(401, MESSAGE.EMAIL_NOT_VERIFIED);
+
+  if (!user.isActive) throw new ErrorResponse(401, MESSAGE.ACCOUNT_NOT_ACTIVE);
 
   const payload = { userId: user._id.toString() };
 
@@ -93,7 +108,7 @@ export const refreshController = async (req, res) => {
   let payload;
   try {
     payload = await verifyRefreshToken(refreshToken);
-  } catch (error) {
+  } catch {
     throw new ErrorResponse(401, MESSAGE.LOGIN_EXPIRED);
   }
   const accessToken = await generateAccessToken({
@@ -108,6 +123,33 @@ export const refreshController = async (req, res) => {
       },
     })
   );
+};
+
+// Xác thực email từ token
+export const verifyEmailController = async (req, res) => {
+  const { token } = req.params;
+  if (!token) throw new ErrorResponse(400, MESSAGE.JWT_INVALID);
+
+  let payload;
+  try {
+    payload = await verifyEmailToken(token);
+  } catch {
+    throw new ErrorResponse(400, MESSAGE.TOKEN_EXPIRED);
+  }
+
+  const userId = payload?.payload?.userId;
+  const user = await User.findById(userId);
+  if (!user) throw new ErrorResponse(404, MESSAGE.USER_NOT_FOUND);
+
+  if (user.isEmailVerified) {
+    return res.status(200).json(toResultOk({ msg: MESSAGE.EMAIL_ALREADY_VERIFIED }));
+  }
+
+  user.isEmailVerified = true;
+  user.isActive = true;
+  await user.save();
+
+  return res.status(200).json(toResultOk({ msg: MESSAGE.EMAIL_VERIFY_SUCCESS }));
 };
 
 /**
@@ -157,9 +199,8 @@ export const resetPasswordController = async (req, res) => {
 
 export const changePasswordController = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  const userId = req.user?.userId;
+  const user = req.user; // authMiddleware đã gán user object vào req.user
 
-  const user = await User.findById(userId);
   if (!user) throw new ErrorResponse(404, MESSAGE.USER_NOT_FOUND);
 
   const isMatch = await user.comparePassword(oldPassword);
