@@ -2,6 +2,7 @@ import Profile from "../models/Profile.js";
 import { MESSAGE } from "../constants/message.js";
 import { toResultError, toResultOk } from "../results/Result.js";
 import Application from "../models/Application.js";
+import Job from "../models/Job.js";
 
 const SUPPORTED_SOCIAL_PLATFORMS = [ "linkedin", "twitter", "facebook", "instagram"];
 
@@ -363,6 +364,82 @@ export const getCandidateAppliedJobs = async (req, res) => {
       toResultError({
         statusCode: 500,
         msg: MESSAGE.CANDIDATE_APPLIED_JOBS_FETCH_FAILED,
+      })
+    );
+  }
+};
+
+export const applyJob = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
+
+    const { jobId, resume, coverLetter } = req.body;
+    if (!jobId) {
+      return res.json(
+        toResultError({ statusCode: 400, msg: MESSAGE.FIELD_REQUIRED })
+      );
+    }
+
+    const job = await Job.findById(jobId).lean();
+    if (!job) {
+      return res.json(
+        toResultError({ statusCode: 404, msg: MESSAGE.JOB_NOT_FOUND })
+      );
+    }
+
+    const existingApplication = await Application.findOne({
+      candidate: user._id,
+      job: jobId,
+    });
+
+    if (existingApplication) {
+      return res.json(
+        toResultError({ statusCode: 409, msg: MESSAGE.CANDIDATE_ALREADY_APPLIED_JOB })
+      );
+    }
+
+    const application = await Application.create({
+      candidate: user._id,
+      job: jobId,
+      resume: resume || "",
+      coverLetter: coverLetter || "",
+      status: "Pending",
+    });
+
+    await application.populate({
+      path: "job",
+      populate: [
+        { path: "company", select: "name logo" },
+        { path: "category", select: "name" },
+        { path: "tags", select: "name" },
+      ],
+    });
+
+    return res.status(201).json(
+      toResultOk({
+        statusCode: 201,
+        msg: MESSAGE.CANDIDATE_APPLY_JOB_SUCCESS,
+        data: {
+          applicationId: application._id,
+          status: application.status,
+          resume: application.resume,
+          coverLetter: application.coverLetter,
+          appliedAt: application.createdAt,
+          job: application.job,
+        },
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    return res.json(
+      toResultError({
+        statusCode: 500,
+        msg: MESSAGE.CANDIDATE_APPLY_JOB_FAILED,
       })
     );
   }
