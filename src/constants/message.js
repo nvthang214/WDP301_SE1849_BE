@@ -82,6 +82,10 @@ export const MESSAGE = {
 
   CANDIDATE_PROFILE_ALREADY_EXISTS: "Hồ sơ ứng viên đã tồn tại",
   CANDIDATE_SOCIAL_ALREADY_EXISTS: "Mạng xã hội của ứng viên đã tồn tại",
+  CANDIDATE_ALREADY_APPLIED_JOB: "Bạn đã ứng tuyển công việc này",
+  CANDIDATE_APPLY_JOB_SUCCESS: "Ứng tuyển công việc thành công",
+  CANDIDATE_APPLY_JOB_FAILED: "Ứng tuyển công việc thất bại",
+  CANDIDATE_APPLY_JOB_ROLE_INVALID: "Chỉ tài khoản ứng viên mới được phép ứng tuyển",
 
   /////////////////////////////////////////////////////
   // THÔNG BÁO JOB
