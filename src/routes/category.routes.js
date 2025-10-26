@@ -14,6 +14,7 @@ const categoryRouter = express.Router();
 // Public route to get all categories
 categoryRouter.get('/', wrapAsync(getAllCategories));
 
+categoryRouter.use(authMiddleware, adminMiddleware);
 // create new category
 categoryRouter.use(authMiddleware, adminMiddleware);
 categoryRouter.post('/create', wrapAsync(createCategory));

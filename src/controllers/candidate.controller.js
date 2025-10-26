@@ -1,35 +1,133 @@
+import mongoose from "mongoose";
 import Profile from "../models/Profile.js";
 import { MESSAGE } from "../constants/message.js";
 import { toResultError, toResultOk } from "../results/Result.js";
-import User from "../models/User.js";
 import Application from "../models/Application.js";
+import Job from "../models/Job.js";
+import Company from "../models/Company.js";
+import Category from "../models/Category.js";
+import Tag from "../models/Tag.js";
 
-const SUPPORTED_SOCIAL_PLATFORMS = [
-  "linkedin",
-  "twitter",
-  "facebook",
-  "instagram",
-  "youtube",
-];
+
+
+const SUPPORTED_SOCIAL_PLATFORMS = ["linkedin", "twitter", "facebook", "instagram"];
 
 const PROFILE_SOCIAL_FIELDS = ["linkedin", "twitter", "facebook", "instagram"];
 
-const ensureCandidateUser = async (res, userId) => {
-  const user = await User.findById(userId).populate("role", "name");
+const normalizeToObjectId = (value) => {
+  if (!value) return null;
+  if (value instanceof mongoose.Types.ObjectId) return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (mongoose.Types.ObjectId.isValid(trimmed)) {
+      return new mongoose.Types.ObjectId(trimmed);
+    }
 
-  if (!user) {
-    res.json(toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }));
-    return null;
+    const match = trimmed.match(/^ObjectId\(['"]?([0-9a-fA-F]{24})['"]?\)$/);
+    if (match) {
+      return new mongoose.Types.ObjectId(match[1]);
+    }
   }
 
-  if (user.role?.name !== "candidate") {
-    res.json(toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }));
-    return null;
-  }
-
-  return user;
+  return null;
 };
 
+const collectValidObjectIds = (values = []) => {
+  const seen = new Set();
+  const result = [];
+
+  for (const value of values) {
+    const objectId = normalizeToObjectId(value);
+    if (objectId) {
+      const key = objectId.toString();
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(objectId);
+      }
+    }
+  }
+
+  return result;
+};
+
+const buildDocsMap = (docs = []) => {
+  const map = new Map();
+  for (const doc of docs) {
+    if (doc?._id) {
+      map.set(doc._id.toString(), doc);
+    }
+  }
+  return map;
+};
+
+const hydrateApplications = async (applications = []) => {
+  if (!applications.length) return [];
+
+  const jobIds = collectValidObjectIds(applications.map((item) => item.job));
+  if (!jobIds.length) return [];
+
+  const jobs = await Job.find({ _id: { $in: jobIds } }).lean();
+
+  const companyIds = collectValidObjectIds(jobs.map((job) => job.company));
+  const categoryIds = collectValidObjectIds(jobs.map((job) => job.category));
+  const tagIds = collectValidObjectIds(
+    jobs.flatMap((job) => (Array.isArray(job.tags) ? job.tags : []))
+  );
+
+  const [companies, categories, tags] = await Promise.all([
+    companyIds.length
+      ? Company.find({ _id: { $in: companyIds } }).select("name logo").lean()
+      : Promise.resolve([]),
+    categoryIds.length
+      ? Category.find({ _id: { $in: categoryIds } }).select("name").lean()
+      : Promise.resolve([]),
+    tagIds.length
+      ? Tag.find({ _id: { $in: tagIds } }).select("name").lean()
+      : Promise.resolve([]),
+  ]);
+
+  const jobMap = buildDocsMap(jobs);
+  const companyMap = buildDocsMap(companies);
+  const categoryMap = buildDocsMap(categories);
+  const tagMap = buildDocsMap(tags);
+
+  return applications
+    .map((application) => {
+      const jobId = normalizeToObjectId(application.job);
+      if (!jobId) return null;
+
+      const rawJob = jobMap.get(jobId.toString());
+      if (!rawJob) return null;
+
+      const companyId = normalizeToObjectId(rawJob.company);
+      const categoryId = normalizeToObjectId(rawJob.category);
+      const jobTagIds = Array.isArray(rawJob.tags)
+        ? rawJob.tags
+            .map((tagId) => normalizeToObjectId(tagId))
+            .filter((tagId) => tagId)
+        : [];
+
+      const hydratedJob = {
+        ...rawJob,
+        company: companyId ? companyMap.get(companyId.toString()) || null : null,
+        category: categoryId ? categoryMap.get(categoryId.toString()) || null : null,
+        tags: jobTagIds
+          .map((tagId) => tagMap.get(tagId.toString()))
+          .filter((tagDoc) => Boolean(tagDoc)),
+      };
+
+      return {
+        applicationId: application._id,
+        status: application.status || null,
+        resume: application.resume || "",
+        coverLetter: application.coverLetter || "",
+        appliedAt: application.createdAt,
+        job: hydratedJob,
+      };
+    })
+    .filter((item) => Boolean(item?.job));
+};
+//lọc data và trả về object chỉ chứa các trường hợp lệ
 const sanitizeSocialPayload = (social) => {
   if (!social || typeof social !== "object") return null;
 
@@ -72,9 +170,12 @@ const extractProfilePayload = (payload = {}) => {
 
 export const getCandidateProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     const profile = await Profile.findOne({ user: user._id })
       .populate("tags", "name")
@@ -99,9 +200,12 @@ export const getCandidateProfile = async (req, res) => {
 
 export const createCandidateProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     const existingProfile = await Profile.findOne({ user: user._id });
     if (existingProfile)
@@ -138,9 +242,12 @@ export const createCandidateProfile = async (req, res) => {
 
 export const updateCandidateProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     const profile = await Profile.findOne({ user: user._id });
     if (!profile)
@@ -184,9 +291,12 @@ export const updateCandidateProfile = async (req, res) => {
 
 export const getCandidateSocial = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     const profile = await Profile.findOne({ user: user._id }).select("social");
     if (!profile)
@@ -214,13 +324,18 @@ export const getCandidateSocial = async (req, res) => {
 
 export const addCandidateSocial = async (req, res) => {
   try {
-    const { userId } = req.params;
     const { social } = req.body;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     if (!Array.isArray(social))
-      return res.json(toResultError({ statusCode: 400, msg: MESSAGE.FIELD_REQUIRED }));
+      return res.json(toResultError({ statusCode: 400, msg: MESSAGE.CANDIDATE_SOCIAL_ALREADY_EXISTS }));
 
-    const profile = await Profile.findOne({ user: userId });
+    const profile = await Profile.findOne({ user: user._id });
     if (!profile)
       return res.json(toResultError({ statusCode: 404, msg: MESSAGE.PROFILE_NOT_FOUND }));
 
@@ -237,21 +352,20 @@ export const addCandidateSocial = async (req, res) => {
 
     return res.json(
       toResultOk({
-        msg: MESSAGE.CANDIDATE_SOCIAL_ADD_SUCCESS,
+        msg: MESSAGE.CANDIDATE_SOCIAL_CREATE_SUCCESS,
         data: profile.social,
       })
     );
   } catch (error) {
     console.error(error);
     return res.json(
-      toResultError({ statusCode: 500, msg: MESSAGE.CANDIDATE_SOCIAL_ADD_FAILED })
+      toResultError({ statusCode: 500, msg: MESSAGE.CANDIDATE_SOCIAL_CREATE_FAILED })
     );
   }
 };
 
 export const updateCandidateSocial = async (req, res) => {
   try {
-    const { userId } = req.params;
     const { platform, url } = req.body;
 
     if (!platform || !url)
@@ -259,11 +373,15 @@ export const updateCandidateSocial = async (req, res) => {
 
     if (!SUPPORTED_SOCIAL_PLATFORMS.includes(platform))
       return res.json(
-        toResultError({ statusCode: 400, msg: MESSAGE.UNSUPPORTED_SOCIAL_PLATFORM })
+        toResultError({ statusCode: 400, msg: MESSAGE.CANDIDATE_PROFILE_UPDATE_FAILED})
       );
 
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     const profile = await Profile.findOne({ user: user._id });
     if (!profile)
@@ -288,13 +406,18 @@ export const updateCandidateSocial = async (req, res) => {
 
 export const deleteCandidateSocial = async (req, res) => {
   try {
-    const { userId } = req.params;
     const { platform } = req.body;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     if (!platform)
       return res.json(toResultError({ statusCode: 400, msg: MESSAGE.FIELD_REQUIRED }));
 
-    const profile = await Profile.findOne({ user: userId });
+    const profile = await Profile.findOne({ user: user._id });
     if (!profile)
       return res.json(toResultError({ statusCode: 404, msg: MESSAGE.PROFILE_NOT_FOUND }));
 
@@ -319,32 +442,18 @@ export const deleteCandidateSocial = async (req, res) => {
 
 export const getCandidateAppliedJobs = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
 
     const applications = await Application.find({ candidate: user._id })
       .sort({ createdAt: -1 })
-      .populate({
-        path: "job",
-        populate: [
-          { path: "company", select: "name logo" },
-          { path: "category", select: "name" },
-          { path: "tags", select: "name" },
-        ],
-      })
       .lean();
 
-    const appliedJobs = applications
-      .filter((application) => application.job)
-      .map((application) => ({
-        applicationId: application._id,
-        status: application.status || null,
-        resume: application.resume || "",
-        coverLetter: application.coverLetter || "",
-        appliedAt: application.createdAt,
-        job: application.job,
-      }));
+    const appliedJobs = await hydrateApplications(applications);
 
     return res.json(
       toResultOk({
@@ -363,11 +472,94 @@ export const getCandidateAppliedJobs = async (req, res) => {
   }
 };
 
+export const applyJob = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
+    const roleName = user?.role?.name || user?.role;
+    if (!roleName || String(roleName).toLowerCase() !== "candidate") {
+      return res.json(
+        toResultError({
+          statusCode: 403,
+          msg: MESSAGE.CANDIDATE_APPLY_JOB_ROLE_INVALID,
+        })
+      );
+    }
+
+    const { jobId, resume, coverLetter } = req.body;
+    if (!jobId) {
+      return res.json(
+        toResultError({ statusCode: 400, msg: MESSAGE.FIELD_REQUIRED })
+      );
+    }
+
+    const job = await Job.findById(jobId).lean();
+    if (!job) {
+      return res.json(
+        toResultError({ statusCode: 404, msg: MESSAGE.JOB_NOT_FOUND })
+      );
+    }
+
+    const existingApplication = await Application.findOne({
+      candidate: user._id,
+      job: jobId,
+    });
+
+    if (existingApplication) {
+      return res.json(
+        toResultError({ statusCode: 409, msg: MESSAGE.CANDIDATE_ALREADY_APPLIED_JOB })
+      );
+    }
+
+    const application = await Application.create({
+      candidate: user._id,
+      job: jobId,
+      resume: resume || "",
+      coverLetter: coverLetter || "",
+      status: "Pending",
+    });
+
+    const appliedJobs = await hydrateApplications([application.toObject()]);
+    const appliedJob =
+      appliedJobs[0] || {
+        applicationId: application._id,
+        status: application.status,
+        resume: application.resume,
+        coverLetter: application.coverLetter,
+        appliedAt: application.createdAt,
+        job,
+      };
+
+    return res.status(201).json(
+      toResultOk({
+        statusCode: 201,
+        msg: MESSAGE.CANDIDATE_APPLY_JOB_SUCCESS,
+        data: appliedJob,
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    return res.json(
+      toResultError({
+        statusCode: 500,
+        msg: MESSAGE.CANDIDATE_APPLY_JOB_FAILED,
+      })
+    );
+  }
+};
+
 export const getInfoCandidate = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
     return res.json(
       toResultOk({
         msg: MESSAGE.CANDIDATE_PROFILE_FETCH_SUCCESS,
@@ -384,10 +576,13 @@ export const getInfoCandidate = async (req, res) => {
 
 export const updateInfoCandidate = async (req, res) => {
   try {
-    const { userId } = req.params;
     const { firstName, lastName, phoneNumber } = req.body;
-    const user = await ensureCandidateUser(res, userId);
-    if (!user) return;
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
     if (typeof firstName === "string" && firstName.trim()) user.firstName = firstName.trim();
     if (typeof lastName === "string" && lastName.trim()) user.lastName = lastName.trim();
 

@@ -8,6 +8,8 @@ import {
   getUserById,
   toggleJobVisibility,
   updateUserRole,
+  getOverviewStats,
+  getUserRegistrationStats,
 } from "../controllers/admin.controller.js";
 import {
   getAllUpgradeRequests,
@@ -40,7 +42,11 @@ adminRoutes.delete("/jobs/:jobId", deleteJob); // DELETE /api/admin/jobs/:jobId
 // Upgrade request management routes
 adminRoutes.get("/upgrade-requests", getAllUpgradeRequests); // GET /api/admin/upgrade-requests
 adminRoutes.get("/upgrade-requests/:requestId", getUpgradeRequestById); // GET /api/admin/upgrade-requests/:requestId
-adminRoutes.put("/upgrade-requests/:requestId", reviewUpgradeRequest); // PUT /api/admin/upgrade-requests/:requestId
+adminRoutes.put("/upgrade-requests/:requestId/review", reviewUpgradeRequest); // PUT /api/admin/upgrade-requests/:requestId
 adminRoutes.get("/upgrade-requests-stats", getUpgradeRequestStats); // GET /api/admin/upgrade-requests-stats
+
+// Overview statistics routes
+adminRoutes.get("/overview-stats", getOverviewStats); // GET /api/admin/overview-stats
+adminRoutes.get("/user-registration-stats", getUserRegistrationStats); // GET /api/admin/user-registration-stats
 
 export default adminRoutes;

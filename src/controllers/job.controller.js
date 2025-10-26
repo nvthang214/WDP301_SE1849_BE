@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { MESSAGE } from '../constants/message.js';
 import ErrorResponse from '../lib/helper/ErrorResponse.js';
 import Tag from '../models/Tag.js';
@@ -132,6 +133,7 @@ export const getJobById = async (req, res) => {
   const job = await Job.findById(id)
     .populate({ path: 'recruiter', select: 'username firstName lastName -_id' })
     .populate({ path: 'category', select: 'name' })
+    .populate({ path: 'company', select: 'name logo' })
     .populate({ path: 'company', select: 'name logo' })
     .populate({ path: 'tags', select: 'name' });
   if (!job) {

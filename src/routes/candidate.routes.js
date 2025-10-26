@@ -9,13 +9,14 @@ import {
     deleteCandidateSocial,
     getInfoCandidate,
     updateInfoCandidate,
-    getCandidateAppliedJobs
+    getCandidateAppliedJobs,
+    applyJob
 } from "../controllers/candidate.controller.js";
 import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
 
 const candidateRoutes = express.Router();
-// candidateRoutes.use(authMiddleware);
+candidateRoutes.use(authMiddleware);
 
 candidateRoutes.get("/profile/:userId", wrapAsync(getCandidateProfile));
 candidateRoutes.post("/profile/:userId", wrapAsync(createCandidateProfile));
@@ -27,6 +28,8 @@ candidateRoutes.put("/social/:userId", wrapAsync(updateCandidateSocial));
 candidateRoutes.delete("/social/:userId", wrapAsync(deleteCandidateSocial));
 
 candidateRoutes.get("/applied-jobs/:userId", wrapAsync(getCandidateAppliedJobs));
+candidateRoutes.post("/applied-jobs/:userId", wrapAsync(applyJob));
+
 candidateRoutes.get("/info/:userId", wrapAsync(getInfoCandidate));
 candidateRoutes.put("/info/:userId", wrapAsync(updateInfoCandidate));
 

@@ -1,21 +1,20 @@
 import express from "express";
 import {
-	addCandidateCv,
-	deleteCandidateCv,
-	getCandidateCv,
-	updateCandidateCv,
-	addUserAvatar,
-	deleteUserAvatar,
-	getUserAvatar,
-	updateUserAvatar,
+  addCandidateCv,
+  deleteCandidateCv,
+  getCandidateCv,
+  updateCandidateCv,
+  addUserAvatar,
+  deleteUserAvatar,
+  getUserAvatar,
+  updateUserAvatar,
 } from "../controllers/upload.controller.js";
 import upload from "../lib/cloudinary/multer.js";
 import { wrapAsync } from "../middlewares/error.middleware.js";
-import {authMiddleware} from "../middlewares/auth.middleware.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const uploadRoutes = express.Router();
-// uploadRoutes.use(authMiddleware);
-
+uploadRoutes.use(authMiddleware);
 uploadRoutes.get("/cv/:userId", wrapAsync(getCandidateCv));
 uploadRoutes.post("/cv/:userId", upload.single("cv"), wrapAsync(addCandidateCv));
 uploadRoutes.put("/cv/:userId", upload.single("cv"), wrapAsync(updateCandidateCv));

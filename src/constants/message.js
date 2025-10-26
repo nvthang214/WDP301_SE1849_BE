@@ -23,6 +23,10 @@ export const MESSAGE = {
   PASSWORD_TOO_SHORT: "Mật khẩu phải có ít nhất 6 ký tự",
   EMAIL_INVALID: "Email không hợp lệ",
   PHONENUMBER_INVALID: "Số điện thoại không hợp lệ",
+  PHONE_MUST_BE_10_DIGITS: "Số điện thoại phải có đúng 10 chữ số",
+  EMAIL_FORMAT_INVALID: "Email không đúng định dạng",
+  COMPANY_PHONE_INVALID: "Số điện thoại công ty phải có đúng 10 chữ số",
+  COMPANY_EMAIL_INVALID: "Email công ty không đúng định dạng",
 
   USERNAME_EXISTED: "Tên đăng nhập đã tồn tại",
   EMAIL_EXISTED: "Email đã tồn tại",
@@ -77,6 +81,11 @@ export const MESSAGE = {
   CANDIDATE_PROFILE_UPDATE_FAILED: "Cập nhật hồ sơ ứng viên thất bại",
 
   CANDIDATE_PROFILE_ALREADY_EXISTS: "Hồ sơ ứng viên đã tồn tại",
+  CANDIDATE_SOCIAL_ALREADY_EXISTS: "Mạng xã hội của ứng viên đã tồn tại",
+  CANDIDATE_ALREADY_APPLIED_JOB: "Bạn đã ứng tuyển công việc này",
+  CANDIDATE_APPLY_JOB_SUCCESS: "Ứng tuyển công việc thành công",
+  CANDIDATE_APPLY_JOB_FAILED: "Ứng tuyển công việc thất bại",
+  CANDIDATE_APPLY_JOB_ROLE_INVALID: "Chỉ tài khoản ứng viên mới được phép ứng tuyển",
 
   /////////////////////////////////////////////////////
   // THÔNG BÁO JOB
@@ -169,6 +178,11 @@ export const MESSAGE = {
   // Lấy danh sách công việc đã ứng tuyển
   CANDIDATE_APPLIED_JOBS_FETCH_SUCCESS: "Lấy danh sách công việc đã ứng tuyển thành công",
   CANDIDATE_APPLIED_JOBS_FETCH_FAILED: "Lấy danh sách công việc đã ứng tuyển thất bại",
+
+  // Ứng tuyển công việc
+  APPLY_JOB_SUCCESS: "Ứng tuyển công việc thành công",
+  APPLY_JOB_FAILED: "Ứng tuyển công việc thất bại",
+  ALREADY_APPLIED: "Bạn đã ứng tuyển công việc này rồi",
 
   /////////////////////////////////////////////////////
   /////////////////////////////////////////////////////

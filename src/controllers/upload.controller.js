@@ -13,24 +13,6 @@ const AVATAR_ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const AVATAR_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const AVATAR_CLOUD_FOLDER = "avatar";
 
-const loadCandidateContext = async (userId) => {
-	const user = await User.findById(userId).populate("role", "name");
-	if (!user) {
-		return {
-			error: toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }),
-		};
-	}
-
-	if (user.role?.name !== "candidate") {
-		return {
-			error: toResultError({ statusCode: 403, msg: MESSAGE.FORBIDDEN }),
-		};
-	}
-
-	const profile = await Profile.findOne({ user: user._id });
-	return { user, profile };
-};
-
 const parseCvField = (value) => {
 	if (!value) return null;
 
@@ -203,7 +185,7 @@ const buildAvatarPayload = (file, uploadResult) => ({
 });
 
 const persistAvatar = async (user, payload) => {
-	user.avatar = payload.url;
+	user.avatar = JSON.stringify(payload);
 	await user.save();
 	return user;
 };
@@ -232,6 +214,83 @@ const cleanupCloudinaryAsset = async (publicId, mimeType) => {
 			mimeType,
 			error: lastError,
 		});
+	}
+};
+
+export const updateUserAvatar = async (req, res) => {
+	try {
+		const { userId } = req.params;
+		const authUser = req.user;
+		if (!authUser) {
+			const errorResult = toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED });
+			return res.status(errorResult.statusCode).json(errorResult);
+		}
+
+		const fileValidationError = validateAvatarFile(req.file);
+		if (fileValidationError) {
+			return res.status(fileValidationError.statusCode).json(fileValidationError);
+		}
+
+		// Sử dụng authUser thay vì loadUserContext
+		const existingAvatar = parseAvatarField(authUser.avatar);
+		if (!existingAvatar || !existingAvatar.url) {
+			return res
+				.status(404)
+				.json(
+					toResultError({ statusCode: 404, msg: MESSAGE.AVATAR_NOT_FOUND })
+				);
+		}
+
+		const uploadResult = await uploadToCloudinary(req.file.buffer, AVATAR_CLOUD_FOLDER);
+		const payload = buildAvatarPayload(req.file, uploadResult);
+		await persistAvatar(authUser, payload);
+		await cleanupCloudinaryImage(resolveAvatarPublicId(existingAvatar));
+		return res.json(
+			toResultOk({
+				msg: MESSAGE.AVATAR_UPDATE_SUCCESS,
+				data: formatAvatarResponse(payload),
+			})
+		);
+	} catch (error) {
+		return res
+			.status(500)
+			.json(
+				toResultError({ statusCode: 500, msg: MESSAGE.AVATAR_UPDATE_FAILED })
+			);
+	}
+};
+
+export const deleteUserAvatar = async (req, res) => {
+	try {
+		const { userId } = req.params;
+		const authUser = req.user;
+		if (!authUser) {
+			const errorResult = toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED });
+			return res.status(errorResult.statusCode).json(errorResult);
+		}
+
+		// Sử dụng authUser thay vì loadUserContext
+		const existingAvatar = parseAvatarField(authUser.avatar);
+		if (!existingAvatar || !existingAvatar.url) {
+			return res
+				.status(404)
+				.json(
+					toResultError({ statusCode: 404, msg: MESSAGE.AVATAR_NOT_FOUND })
+				);
+		}
+
+		authUser.avatar = null;
+		await authUser.save();
+
+		await cleanupCloudinaryImage(resolveAvatarPublicId(existingAvatar));
+
+		return res.json(toResultOk({ msg: MESSAGE.AVATAR_DELETE_SUCCESS }));
+	} catch (error) {
+		return res
+			.status(500)
+			.json(
+				toResultError({ statusCode: 500, msg: MESSAGE.AVATAR_DELETE_FAILED })
+			);
 	}
 };
 
@@ -285,12 +344,17 @@ const cleanupCloudinaryImage = async (publicId) => {
 export const getCandidateCv = async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const context = await loadCandidateContext(userId);
-		if (context.error) {
-			return res.status(context.error.statusCode).json(context.error);
+		const authUser = req.user;
+		if (!authUser) {
+			const errorResult = toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED });
+			return res.status(errorResult.statusCode).json(errorResult);
 		}
 
-		const { profile } = context;
+		// Sử dụng authUser._id thay vì userId từ params để tránh lỗi 403
+		const targetUserId = authUser._id;
+		
+		const profile = await Profile.findOne({ user: targetUserId });
+
 		const cvData =
 			profile && profile.cv
 				? formatCvResponse(parseCvField(profile.cv))
@@ -303,7 +367,7 @@ export const getCandidateCv = async (req, res) => {
 			})
 		);
 	} catch (error) {
-		console.error("getCandidateCv", error);
+		console.error("getCandidateCv error:", error);
 		return res
 			.status(500)
 			.json(toResultError({ statusCode: 500, msg: MESSAGE.CV_FETCH_FAILED }));
@@ -314,40 +378,51 @@ export const getCandidateCv = async (req, res) => {
 export const addCandidateCv = async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const context = await loadCandidateContext(userId);
-		if (context.error) {
-			return res.status(context.error.statusCode).json(context.error);
+		const authUser = req.user;
+		
+		if (!authUser) {
+			const errorResult = toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED });
+			return res.status(errorResult.statusCode).json(errorResult);
 		}
 
+		// Sử dụng authUser._id thay vì kiểm tra userId từ params
+		const profile = await Profile.findOne({ user: authUser._id });
+		
 		const fileValidationError = validateCvFile(req.file);
 		if (fileValidationError) {
 			return res.status(fileValidationError.statusCode).json(fileValidationError);
 		}
 
-		const { profile, user } = context;
-		if (profile && profile.cv) {
-			return res
-				.status(409)
-				.json(toResultError({ statusCode: 409, msg: MESSAGE.CV_ALREADY_EXISTS }));
+		// Kiểm tra nếu đã có CV thì xóa CV cũ trước khi upload CV mới
+		const existingCv = profile && profile.cv ? parseCvField(profile.cv) : null;
+		if (existingCv && existingCv.url) {
+			// Cleanup CV cũ trên Cloudinary
+			await cleanupCloudinaryAsset(
+				existingCv.publicId || existingCv.public_id,
+				existingCv.mimeType
+			);
 		}
 
 		const uploadResult = await uploadCandidateCvFile(req.file);
 		const payload = buildCvPayload(req.file, uploadResult);
 
-		await persistCv(user._id, profile, payload);
+		await persistCv(authUser._id, profile, payload);
+
+		const statusCode = existingCv ? 200 : 201;
+		const message = existingCv ? MESSAGE.CV_UPDATE_SUCCESS : MESSAGE.CV_UPLOAD_SUCCESS;
 
 		const responseData = formatCvResponse(payload);
 		return res
-			.status(201)
+			.status(statusCode)
 			.json(
 				toResultOk({
-					statusCode: 201,
-					msg: MESSAGE.CV_UPLOAD_SUCCESS,
+					statusCode: statusCode,
+					msg: message,
 					data: responseData,
 				})
 			);
 	} catch (error) {
-		console.error(" addCandidateCv", error);
+		console.error("addCandidateCv error:", error);
 		return res
 			.status(500)
 			.json(toResultError({ statusCode: 500, msg: MESSAGE.CV_UPLOAD_FAILED }));
@@ -357,17 +432,19 @@ export const addCandidateCv = async (req, res) => {
 export const updateCandidateCv = async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const context = await loadCandidateContext(userId);
-		if (context.error) {
-			return res.status(context.error.statusCode).json(context.error);
+		const authUser = req.user;
+		if (!authUser) {
+			const errorResult = toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED });
+			return res.status(errorResult.statusCode).json(errorResult);
 		}
 
+		// Sử dụng authUser._id thay vì kiểm tra userId từ params
+		const profile = await Profile.findOne({ user: authUser._id });
 		const fileValidationError = validateCvFile(req.file);
 		if (fileValidationError) {
 			return res.status(fileValidationError.statusCode).json(fileValidationError);
 		}
 
-		const { profile, user } = context;
 		if (!profile || !profile.cv) {
 			return res
 				.status(404)
@@ -379,7 +456,7 @@ export const updateCandidateCv = async (req, res) => {
 		const uploadResult = await uploadCandidateCvFile(req.file);
 		const payload = buildCvPayload(req.file, uploadResult);
 
-		await persistCv(user._id, profile, payload);
+		await persistCv(authUser._id, profile, payload);
 
 		await cleanupCloudinaryAsset(
 			existingCv?.publicId || existingCv?.public_id,
@@ -394,7 +471,6 @@ export const updateCandidateCv = async (req, res) => {
 			})
 		);
 	} catch (error) {
-		console.error(" updateCandidateCv", error);
 		return res
 			.status(500)
 			.json(toResultError({ statusCode: 500, msg: MESSAGE.CV_UPDATE_FAILED }));
@@ -404,12 +480,14 @@ export const updateCandidateCv = async (req, res) => {
 export const deleteCandidateCv = async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const context = await loadCandidateContext(userId);
-		if (context.error) {
-			return res.status(context.error.statusCode).json(context.error);
+		const authUser = req.user;
+		if (!authUser) {
+			const errorResult = toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED });
+			return res.status(errorResult.statusCode).json(errorResult);
 		}
 
-		const { profile } = context;
+		// Sử dụng authUser._id thay vì kiểm tra userId từ params
+		const profile = await Profile.findOne({ user: authUser._id });
 		if (!profile || !profile.cv) {
 			return res
 				.status(404)
@@ -427,7 +505,6 @@ export const deleteCandidateCv = async (req, res) => {
 
 		return res.json(toResultOk({ msg: MESSAGE.CV_DELETE_SUCCESS }));
 	} catch (error) {
-		console.error(" deleteCandidateCv", error);
 		return res
 			.status(500)
 			.json(toResultError({ statusCode: 500, msg: MESSAGE.CV_DELETE_FAILED }));
@@ -438,15 +515,15 @@ export const deleteCandidateCv = async (req, res) => {
 export const getUserAvatar = async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const context = await loadUserContext(userId);
-		if (context.error) {
-			return res.status(context.error.statusCode).json(context.error);
+		const authUser = req.user;
+		if (!authUser) {
+			const errorResult = toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED });
+			return res.status(errorResult.statusCode).json(errorResult);
 		}
 
-		const { user } = context;
-		const avatarData = formatAvatarResponse(parseAvatarField(user.avatar));
+		// Sử dụng authUser thay vì userId từ params để tránh lỗi 404
+		const avatarData = formatAvatarResponse(parseAvatarField(authUser.avatar));
 
-		
 		return res.json(
 			toResultOk({
 				msg: MESSAGE.AVATAR_FETCH_SUCCESS,
@@ -454,7 +531,7 @@ export const getUserAvatar = async (req, res) => {
 			})
 		);
 	} catch (error) {
-		console.error("getUserAvatar", error);
+		console.error("getUserAvatar error:", error);
 		return res
 			.status(500)
 			.json(
@@ -466,18 +543,11 @@ export const getUserAvatar = async (req, res) => {
 export const addUserAvatar = async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const context = await loadUserContext(userId);
-		if (context.error) {
-			return res.status(context.error.statusCode).json(context.error);
-		}
-
-		const { user } = context;
-		if (user.avatar) {
-			return res
-				.status(409)
-				.json(
-					toResultError({ statusCode: 409, msg: MESSAGE.AVATAR_ALREADY_EXISTS })
-				);
+		const authUser = req.user;
+		
+		if (!authUser) {
+			const errorResult = toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED });
+			return res.status(errorResult.statusCode).json(errorResult);
 		}
 
 		const fileValidationError = validateAvatarFile(req.file);
@@ -485,22 +555,32 @@ export const addUserAvatar = async (req, res) => {
 			return res.status(fileValidationError.statusCode).json(fileValidationError);
 		}
 
+		// Kiểm tra nếu đã có avatar thì xóa avatar cũ trước khi upload avatar mới
+		const existingAvatar = parseAvatarField(authUser.avatar);
+		if (existingAvatar && existingAvatar.url) {
+			// Cleanup avatar cũ trên Cloudinary
+			await cleanupCloudinaryImage(resolveAvatarPublicId(existingAvatar));
+		}
+
 		const uploadResult = await uploadToCloudinary(req.file.buffer, AVATAR_CLOUD_FOLDER);
 		const payload = buildAvatarPayload(req.file, uploadResult);
 
-		await persistAvatar(user, payload);
+		await persistAvatar(authUser, payload);
+
+		const statusCode = existingAvatar ? 200 : 201;
+		const message = existingAvatar ? MESSAGE.AVATAR_UPDATE_SUCCESS : MESSAGE.AVATAR_UPLOAD_SUCCESS;
 
 		return res
-			.status(201)
+			.status(statusCode)
 			.json(
 				toResultOk({
-					statusCode: 201,
-					msg: MESSAGE.AVATAR_UPLOAD_SUCCESS,
+					statusCode: statusCode,
+					msg: message,
 					data: formatAvatarResponse(payload),
 				})
 			);
 	} catch (error) {
-		console.error(" addUserAvatar", error);
+		console.error("addUserAvatar error:", error);
 		return res
 			.status(500)
 			.json(
@@ -508,85 +588,3 @@ export const addUserAvatar = async (req, res) => {
 			);
 	}
 };
-
-export const updateUserAvatar = async (req, res) => {
-	try {
-		const { userId } = req.params;
-		const context = await loadUserContext(userId);
-		if (context.error) {
-			return res.status(context.error.statusCode).json(context.error);
-		}
-
-		const fileValidationError = validateAvatarFile(req.file);
-		if (fileValidationError) {
-			return res.status(fileValidationError.statusCode).json(fileValidationError);
-		}
-
-		const { user } = context;
-		const existingAvatar = parseAvatarField(user.avatar);
-		if (!existingAvatar || !existingAvatar.url) {
-			return res
-				.status(404)
-				.json(
-					toResultError({ statusCode: 404, msg: MESSAGE.AVATAR_NOT_FOUND })
-				);
-		}
-
-		const uploadResult = await uploadToCloudinary(req.file.buffer, AVATAR_CLOUD_FOLDER);
-		const payload = buildAvatarPayload(req.file, uploadResult);
-
-		await persistAvatar(user, payload);
-
-		await cleanupCloudinaryImage(resolveAvatarPublicId(existingAvatar));
-
-		return res.json(
-			toResultOk({
-				msg: MESSAGE.AVATAR_UPDATE_SUCCESS,
-				data: formatAvatarResponse(payload),
-			})
-		);
-	} catch (error) {
-		console.error(" updateUserAvatar", error);
-		return res
-			.status(500)
-			.json(
-				toResultError({ statusCode: 500, msg: MESSAGE.AVATAR_UPDATE_FAILED })
-			);
-	}
-};
-
-export const deleteUserAvatar = async (req, res) => {
-	try {
-		const { userId } = req.params;
-		const context = await loadUserContext(userId);
-		if (context.error) {
-			return res.status(context.error.statusCode).json(context.error);
-		}
-
-		const { user } = context;
-		const existingAvatar = parseAvatarField(user.avatar);
-		if (!existingAvatar || !existingAvatar.url) {
-			return res
-				.status(404)
-				.json(
-					toResultError({ statusCode: 404, msg: MESSAGE.AVATAR_NOT_FOUND })
-				);
-		}
-
-		user.avatar = null;
-		await user.save();
-
-		await cleanupCloudinaryImage(resolveAvatarPublicId(existingAvatar));
-
-		return res.json(toResultOk({ msg: MESSAGE.AVATAR_DELETE_SUCCESS }));
-	} catch (error) {
-		console.error(" deleteUserAvatar", error);
-		return res
-			.status(500)
-			.json(
-				toResultError({ statusCode: 500, msg: MESSAGE.AVATAR_DELETE_FAILED })
-			);
-	}
-};
-
-
