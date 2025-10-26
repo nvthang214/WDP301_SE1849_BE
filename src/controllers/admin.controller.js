@@ -378,3 +378,45 @@ export const getUserRegistrationStats = async (req, res) => {
     });
   }
 };
+
+// Get public stats for home page (no auth required)
+export const getPublicStats = async (req, res) => {
+  try {
+    // Count active jobs
+    const activeJobsCount = await Job.countDocuments({ isActive: true });
+    
+    // Count total companies
+    const companiesCount = await Company.countDocuments({});
+    
+    // Count candidate users
+    const candidateRole = await Role.findOne({ name: "candidate" });
+    const candidatesCount = await User.countDocuments({ 
+      role: candidateRole?._id 
+    });
+    
+    // Count jobs created in current month (new jobs)
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const newJobsCount = await Job.countDocuments({
+      createdAt: { $gte: startOfMonth }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Public stats retrieved successfully",
+      data: {
+        liveJobs: activeJobsCount,
+        companies: companiesCount,
+        candidates: candidatesCount,
+        newJobs: newJobsCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error getting public stats:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};

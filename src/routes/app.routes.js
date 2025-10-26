@@ -10,6 +10,7 @@ import appstatusRoutes from "./appstatus.routes.js";
 import candidateRoutes from "./candidate.routes.js";
 import recruiterRoutes from "./recruiter.routes.js";
 import uploadRoutes from "./upload.routes.js";
+import publicRoutes from "./public.routes.js";
 
 
 const appRoutes = express.Router();
@@ -22,6 +23,9 @@ import upgradeRequestRoutes from './upgradeRequest.routes.js';
 
 // appRoutes.use("/auth", authRoutes);
 appRoutes.use("/auth", authRoutes);
+
+// Public routes (no auth required)
+appRoutes.use("/public", publicRoutes);
 
 appRoutes.use('/users', userRoutes);
 appRoutes.use('/candidates', candidateRoutes);
@@ -42,7 +46,7 @@ appRoutes.use('/companies', companyRoutes);
 
 // Admin routes
 appRoutes.use("/admin", adminRoutes);
-appRoutes.use("/applications", appstatusRoutes);
+// appRoutes.use("/applications", appstatusRoutes);
 appRoutes.use("/companies", companyRoutes);
 
 // Recruiter routes
