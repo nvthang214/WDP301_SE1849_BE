@@ -8,10 +8,11 @@ import { wrapAsync } from '../middlewares/error.middleware.js';
 import { authMiddleware} from '../middlewares/auth.middleware.js';
 
 const tagRoutes = express.Router();
-tagRoutes.use(authMiddleware);
+
 // get all tags
 tagRoutes.get('/', wrapAsync(getAllTags));
 
+tagRoutes.use(authMiddleware);
 // create new tag
 tagRoutes.post('/create', wrapAsync(createTag));
 // update tag by id
