@@ -561,6 +561,92 @@ export const getCandidateAppliedJobs = async (req, res) => {
   }
 };
 
+export const getCandidateFavoriteJobs = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.json(
+        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
+      );
+    }
+
+    const favorites = await JobFavorite.find({ candidate: user._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!favorites.length) {
+      return res.json(
+        toResultOk({
+          msg: MESSAGE.CANDIDATE_FAVORITE_JOBS_FETCH_SUCCESS,
+          data: [],
+        })
+      );
+    }
+
+    const jobIds = collectValidObjectIds(favorites.map((favorite) => favorite.job));
+
+    if (!jobIds.length) {
+      return res.json(
+        toResultOk({
+          msg: MESSAGE.CANDIDATE_FAVORITE_JOBS_FETCH_SUCCESS,
+          data: [],
+        })
+      );
+    }
+
+    const rawJobs = await Job.find({ _id: { $in: jobIds } })
+      .populate({ path: "company", select: "name logo" })
+      .populate({ path: "category", select: "name" })
+      .populate({ path: "tags", select: "name" })
+      .lean();
+
+    if (!rawJobs.length) {
+      return res.json(
+        toResultOk({
+          msg: MESSAGE.CANDIDATE_FAVORITE_JOBS_FETCH_SUCCESS,
+          data: [],
+        })
+      );
+    }
+
+    const jobMap = buildDocsMap(rawJobs);
+
+    const favoriteJobs = favorites
+      .map((favorite) => {
+        const jobId = normalizeToObjectId(favorite.job);
+        if (!jobId) return null;
+
+        const job = jobMap.get(jobId.toString());
+        if (!job) return null;
+
+        const jobWithFavorite = { ...job, isFavorite: true };
+
+        return {
+          favoriteId: favorite._id?.toString?.() || "",
+          favoritedAt: favorite.createdAt || null,
+          jobId: job._id?.toString?.() || "",
+          job: jobWithFavorite,
+        };
+      })
+      .filter(Boolean);
+
+    return res.json(
+      toResultOk({
+        msg: MESSAGE.CANDIDATE_FAVORITE_JOBS_FETCH_SUCCESS,
+        data: favoriteJobs,
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    return res.json(
+      toResultError({
+        statusCode: 500,
+        msg: MESSAGE.CANDIDATE_FAVORITE_JOBS_FETCH_FAILED,
+      })
+    );
+  }
+};
+
 export const getTopAppliedJobs = async (req, res) => {
   try {
     const limit = parsePositiveInt(req.query?.limit, 6, 20);
@@ -896,3 +982,6 @@ export const getJobById = async (req, res) => {
 
   res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobObj }));
 }
+
+
+

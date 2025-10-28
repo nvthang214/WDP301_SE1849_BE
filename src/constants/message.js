@@ -180,6 +180,8 @@ export const MESSAGE = {
   CANDIDATE_APPLIED_JOBS_FETCH_FAILED: "Lấy danh sách công việc đã ứng tuyển thất bại",
   CANDIDATE_TOP_APPLIED_JOBS_FETCH_SUCCESS: "Lấy danh sách công việc được ứng tuyển nhiều nhất thành công",
   CANDIDATE_TOP_APPLIED_JOBS_FETCH_FAILED: "Lấy danh sách công việc được ứng tuyển nhiều nhất thất bại",
+  CANDIDATE_FAVORITE_JOBS_FETCH_SUCCESS: "Lấy danh sách công việc yêu thích thành công",
+  CANDIDATE_FAVORITE_JOBS_FETCH_FAILED: "Lấy danh sách công việc yêu thích thất bại",
 
   // Ứng tuyển công việc
   APPLY_JOB_SUCCESS: "Ứng tuyển công việc thành công",

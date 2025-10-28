@@ -10,6 +10,7 @@ import {
     getInfoCandidate,
     updateInfoCandidate,
     getCandidateAppliedJobs,
+    getCandidateFavoriteJobs,
     getJobById,
     applyJob
 } from "../controllers/candidate.controller.js";
@@ -30,6 +31,8 @@ candidateRoutes.delete("/social/:userId", wrapAsync(deleteCandidateSocial));
 
 candidateRoutes.get("/applied-jobs/:userId", wrapAsync(getCandidateAppliedJobs));
 candidateRoutes.post("/applied-jobs/:userId", wrapAsync(applyJob));
+candidateRoutes.get("/favorite-jobs/:userId", wrapAsync(getCandidateFavoriteJobs));
+
 candidateRoutes.get("/info/:userId", wrapAsync(getInfoCandidate));
 candidateRoutes.put("/info/:userId", wrapAsync(updateInfoCandidate));
 
