@@ -7,6 +7,8 @@ import {
   getCandidatesInJob,
   filterCandidatesByStatus,
   applyForJob,
+  getAllApplicationsByRecruiter,
+  getShortlistedApplicationsByRecruiter,
   //   getAllApplications,
   //   updateApplicationStatus,
 } from "../controllers/application.controller.js";
@@ -17,10 +19,14 @@ router.use(authMiddleware, recruiterMiddleware);
 // Recruiter routes
 // router.get('/applications', wrapAsync(getAllApplications));
 // router.put("/applications/:applicationId/status", wrapAsync(updateApplicationStatus));
-router.get("/jobs/:jobId/candidates", wrapAsync(getCandidatesInJob));
-router.get("/jobs/:jobId/candidates/filter", wrapAsync(filterCandidatesByStatus));
 
-// Direct URL format matching the request pattern
+// Get all applications for recruiter's company
+router.get("/", wrapAsync(getAllApplicationsByRecruiter));
+
+// Get shortlisted applications for recruiter's company
+router.get("/shortlisted", wrapAsync(getShortlistedApplicationsByRecruiter));
+
+// Get candidates for specific job
 router.get("/jobs/:jobId/candidates", wrapAsync(getCandidatesInJob));
 router.get("/jobs/:jobId/candidates/filter", wrapAsync(filterCandidatesByStatus));
 
