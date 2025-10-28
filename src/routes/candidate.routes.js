@@ -10,7 +10,8 @@ import {
     getInfoCandidate,
     updateInfoCandidate,
     getCandidateAppliedJobs,
-    getTopAppliedJobs,
+    getCandidateFavoriteJobs,
+    getJobById,
     applyJob
 } from "../controllers/candidate.controller.js";
 import { wrapAsync } from '../middlewares/error.middleware.js';
@@ -30,9 +31,11 @@ candidateRoutes.delete("/social/:userId", wrapAsync(deleteCandidateSocial));
 
 candidateRoutes.get("/applied-jobs/:userId", wrapAsync(getCandidateAppliedJobs));
 candidateRoutes.post("/applied-jobs/:userId", wrapAsync(applyJob));
-candidateRoutes.get("/top-applied-jobs", wrapAsync(getTopAppliedJobs));
+candidateRoutes.get("/favorite-jobs/:userId", wrapAsync(getCandidateFavoriteJobs));
 
 candidateRoutes.get("/info/:userId", wrapAsync(getInfoCandidate));
 candidateRoutes.put("/info/:userId", wrapAsync(updateInfoCandidate));
+
+candidateRoutes.get("/jobs/:id", wrapAsync(getJobById));
 
 export default candidateRoutes;
