@@ -6,6 +6,7 @@ import Application from "../models/Application.js";
 import Job from "../models/Job.js";
 import Company from "../models/Company.js";
 import Category from "../models/Category.js";
+import JobFavorite from "../models/JobFavorite.js";
 import Tag from "../models/Tag.js";
 
 
@@ -867,3 +868,31 @@ export const updateInfoCandidate = async (req, res) => {
     );
   }
 };
+
+
+export const getJobById = async (req, res) => {
+  const { id } = req.params;
+
+  const userId = req.user?._id || null;
+
+  const job = await Job.findById(id)
+    .populate({ path: 'recruiter', select: 'username firstName lastName -_id' })
+    .populate({ path: 'category', select: 'name' })
+    .populate({ path: 'company', select: 'name logo' })
+    .populate({ path: 'company', select: 'name logo' })
+    .populate({ path: 'tags', select: 'name' });
+  if (!job) {
+    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
+  }
+  // Determine favorite flag for this job
+  let isFavorite = false;
+  if (userId) {
+    const fav = await JobFavorite.exists({ candidate: userId, job: id });
+    isFavorite = !!fav;
+  }
+
+  const jobObj = job.toObject();
+  jobObj.isFavorite = isFavorite;
+
+  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobObj }));
+}

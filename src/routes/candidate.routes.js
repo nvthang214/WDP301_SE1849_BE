@@ -10,6 +10,7 @@ import {
     getInfoCandidate,
     updateInfoCandidate,
     getCandidateAppliedJobs,
+    getJobById,
     applyJob
 } from "../controllers/candidate.controller.js";
 import { wrapAsync } from '../middlewares/error.middleware.js';
@@ -31,5 +32,7 @@ candidateRoutes.get("/applied-jobs/:userId", wrapAsync(getCandidateAppliedJobs))
 candidateRoutes.post("/applied-jobs/:userId", wrapAsync(applyJob));
 candidateRoutes.get("/info/:userId", wrapAsync(getInfoCandidate));
 candidateRoutes.put("/info/:userId", wrapAsync(updateInfoCandidate));
+
+candidateRoutes.get("/jobs/:id", wrapAsync(getJobById));
 
 export default candidateRoutes;
