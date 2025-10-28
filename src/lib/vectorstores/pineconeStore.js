@@ -48,3 +48,8 @@ export async function queryEmbedding(embedding, topK = 5) {
     text: m.metadata?.text,
   }));
 }
+
+export async function deleteItems(ids) {
+  await initPinecone();
+  await index.deleteMany(ids);
+}

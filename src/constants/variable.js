@@ -21,3 +21,7 @@ export const STATUS_CODE = {
 export const REGEX = {
   PHONE: /^(0|\+84)[3|5|7|8|9]\d{8}$/,
 };
+
+export const FRONTEND_ROUTES = {
+  JOB_DETAILS: "/jobs", // Path to job details page on frontend
+};

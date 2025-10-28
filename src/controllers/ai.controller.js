@@ -5,26 +5,25 @@ import openai from "../configs/openAI.js";
 import Conversation from "../models/Conversation.js";
 import Chatbot from "../models/Chatbot.js";
 import { AI_SYSTEM_PROMPT } from "../lib/promts/promts.js";
+import { getEmbedding } from "../lib/vectorstores/embedding.js";
+import { getHistoryContext } from "../lib/vectorstores/context.js";
+import { FRONTEND_ROUTES } from "../constants/variable.js";
 const router = express.Router();
 
 export const aiCandidateController = async (req, res) => {
   try {
     const { question, topK = 5, conversationId } = req.body;
+    let conversation;
+    const userId = req.user._id;
+
     if (!question) return res.status(400).json({ error: "missing question" });
 
     // 1. embed question
-    const qembRes = await openai.embeddings.create({
-      model: process.env.EMBEDDING_MODEL,
-      input: question,
-    });
-    const qEmbedding = qembRes.data[0].embedding;
-
+    const qEmbedding = await getEmbedding(question);
     // 2. search vector DB
     const matches = await queryEmbedding(qEmbedding, topK);
 
     // 3. history conversation (if not new)
-    let conversation;
-    const userId = req.user._id;
     if (!conversationId) {
       conversation = new Conversation({
         user_id: userId,
@@ -35,18 +34,16 @@ export const aiCandidateController = async (req, res) => {
       conversation = await Conversation.find({ _id: conversationId, user_id: userId });
     }
 
-    const history = await Chatbot.find({ conversation_id: conversation._id })
-      .sort({ createdAt: -1 })
-      .lean();
+    const historyContext = await getHistoryContext(conversation._id);
 
-    const historyContext = history
-      .reverse()
-      .map((msg) => `${msg.isAI ? "AI Assistant" : "User"}: ${msg.message}`)
-      .join("\n");
+    // Create context with job IDs for linking
+    const frontendUrl = process.env.CLIENT_URL || "http://localhost:5173";
 
-    // 3. build context
     const context = matches
-      .map((m, i) => `Context ${i + 1} (score=${m.score?.toFixed(3)}):\n${m.text}`)
+      .map((m, i) => {
+        const jobLink = `${frontendUrl}${FRONTEND_ROUTES.JOB_DETAILS}/${m.id}`;
+        return `Context ${i + 1} (score=${m.score?.toFixed(3)}):\nJob ID: ${m.id}\nJob Link: ${jobLink}\n${m.text}`;
+      })
       .join("\n\n---\n\n");
 
     // 4. ask LLM
@@ -63,6 +60,9 @@ export const aiCandidateController = async (req, res) => {
 
     Hãy trả lời dựa trên ngữ cảnh ở trên, tuân thủ đúng các quy tắc trong systemPrompt. 
     Nếu thông tin không có sẵn, hãy phản hồi khéo léo và thân thiện, không dẫn người dùng ra ngoài hệ thống.
+    
+    **QUAN TRỌNG:** Khi đề cập đến công việc cụ thể, hãy LUÔN LUÔN bao gồm link "Job Link" tương ứng để ứng viên có thể xem chi tiết và ứng tuyển.
+    Định dạng link dưới dạng: [Tên công việc](Job Link URL)
     `;
 
     const completion = await openai.chat.completions.create({
