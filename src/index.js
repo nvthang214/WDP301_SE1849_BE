@@ -24,6 +24,8 @@ app.use(express.json());
 app.use(cookieParser());
 // Connect to the database
 connectDB();
+
+// Health check route
 app.get("/api/sync", (req, res) => {
   // Sync logic here
   res.status(200).json({ message: "Sync successful" });
