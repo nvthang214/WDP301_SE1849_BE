@@ -27,10 +27,16 @@ export const getAllJobs = async (req, res) => {
       { title: { $regex: search, $options: 'i' } },
       { location: { $regex: search, $options: 'i' } },
       { description: { $regex: search, $options: 'i' } },
+      { requirements: { $regex: search, $options: 'i' } },
+      { desirable: { $regex: search, $options: 'i' } },
       { tags: { $in: tagIds } },
       { category: { $in: categoryIdsFromSearch } },
       { company: { $in: companyIdsFromSearch } },
-      { city: { $regex: search, $options: 'i' } }
+      { country: { $regex: search, $options: 'i' } },
+      { city: { $regex: search, $options: 'i' } },
+      { jobLevel: { $regex: search, $options: 'i' } },
+      { experience: { $regex: search, $options: 'i' } },
+      { education: { $regex: search, $options: 'i' } },
     ];
   }
   if (categoryId) query.category = categoryId;
