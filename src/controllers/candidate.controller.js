@@ -121,7 +121,8 @@ const formatTopAppliedJob = (job = {}, stat = {}) => {
     minSalary: job?.minSalary ?? null,
     maxSalary: job?.maxSalary ?? null,
     salaryType: job?.salaryType || null,
-    totalApplicants: stat?.totalApplicants || 0,
+  totalApplicants: stat?.totalApplicants || 0,
+  totalCandidates: stat?.totalCandidates || 0,
     lastAppliedAt: stat?.lastAppliedAt || null,
     vacancies: job?.vacancies ?? null,
     location: location || "",
@@ -561,27 +562,39 @@ export const getCandidateAppliedJobs = async (req, res) => {
 
 export const getTopAppliedJobs = async (req, res) => {
   try {
-    const user = req.user;
-    if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
-    }
-
     const limit = parsePositiveInt(req.query?.limit, 6, 20);
     const aggregationLimit = Math.max(limit * 3, limit);
 
     const topJobStats = await Application.aggregate([
       {
+        $match: {
+          job: { $ne: null },
+          candidate: { $ne: null },
+        },
+      },
+      {
         $group: {
           _id: "$job",
           totalApplicants: { $sum: 1 },
           lastAppliedAt: { $max: "$createdAt" },
+          uniqueCandidates: { $addToSet: "$candidate" },
+        },
+      },
+      {
+        $project: {
+          totalApplicants: 1,
+          lastAppliedAt: 1,
+          totalCandidates: {
+            $size: {
+              $setDifference: ["$uniqueCandidates", [null]],
+            },
+          },
         },
       },
       {
         $sort: {
           totalApplicants: -1,
+          totalCandidates: -1,
           lastAppliedAt: -1,
           _id: 1,
         },
