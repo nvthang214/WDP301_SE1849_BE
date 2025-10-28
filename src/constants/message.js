@@ -33,6 +33,8 @@ export const MESSAGE = {
 
   TOKEN_EXPIRED: "Token đã hết hạn",
 
+  QUESTION_CANNOT_BE_EMPTY: "Question không được để trống",
+
   // THÔNG BÁO THÀNH CÔNG/THẤT BẠI
   REGISTER_SUCCESS: "Đăng ký thành công",
   LOGIN_SUCCESS: "Đăng nhập thành công",
@@ -61,7 +63,7 @@ export const MESSAGE = {
   // THÔNG BÁO CANDIDATE
   CANDIDATE_SOCIAL_FETCH_SUCCESS: "Lấy thông tin mạng xã hội của ứng viên thành công",
   CANDIDATE_SOCIAL_FETCH_FAILED: "Lấy thông tin mạng xã hội của ứng viên thất bại",
-  // thêm SOCIAL 
+  // thêm SOCIAL
   CANDIDATE_SOCIAL_CREATE_SUCCESS: "Thêm mạng xã hội cho ứng viên thành công",
   CANDIDATE_SOCIAL_CREATE_FAILED: "Thêm mạng xã hội cho ứng viên thất bại",
   // cập nhật SOCIAL
@@ -153,15 +155,13 @@ export const MESSAGE = {
   CV_DELETE_SUCCESS: "Xóa CV thành công",
   CV_DELETE_FAILED: "Xóa CV thất bại",
 
-
-  
   // AVATAR
   AVATAR_NOT_FOUND: "Không tìm thấy ảnh đại diện",
   AVATAR_ALREADY_EXISTS: "Ảnh đại diện đã tồn tại",
   AVATAR_FILETYPE_INVALID: "Định dạng ảnh không hỗ trợ",
   AVATAR_FILESIZE_EXCEEDED: "Ảnh vượt quá dung lượng cho phép",
   AVATAR_FILE_REQUIRED: "Vui lòng chọn ảnh đại diện",
-  
+
   // lấy AVATAR
   AVATAR_FETCH_SUCCESS: "Lấy ảnh đại diện thành công",
   AVATAR_FETCH_FAILED: "Lấy ảnh đại diện thất bại",
@@ -174,12 +174,14 @@ export const MESSAGE = {
   // xóa AVATAR
   AVATAR_DELETE_SUCCESS: "Xóa ảnh đại diện thành công",
   AVATAR_DELETE_FAILED: "Xóa ảnh đại diện thất bại",
-  
+
   // Lấy danh sách công việc đã ứng tuyển
   CANDIDATE_APPLIED_JOBS_FETCH_SUCCESS: "Lấy danh sách công việc đã ứng tuyển thành công",
   CANDIDATE_APPLIED_JOBS_FETCH_FAILED: "Lấy danh sách công việc đã ứng tuyển thất bại",
-  CANDIDATE_TOP_APPLIED_JOBS_FETCH_SUCCESS: "Lấy danh sách công việc được ứng tuyển nhiều nhất thành công",
-  CANDIDATE_TOP_APPLIED_JOBS_FETCH_FAILED: "Lấy danh sách công việc được ứng tuyển nhiều nhất thất bại",
+  CANDIDATE_TOP_APPLIED_JOBS_FETCH_SUCCESS:
+    "Lấy danh sách công việc được ứng tuyển nhiều nhất thành công",
+  CANDIDATE_TOP_APPLIED_JOBS_FETCH_FAILED:
+    "Lấy danh sách công việc được ứng tuyển nhiều nhất thất bại",
   CANDIDATE_FAVORITE_JOBS_FETCH_SUCCESS: "Lấy danh sách công việc yêu thích thành công",
   CANDIDATE_FAVORITE_JOBS_FETCH_FAILED: "Lấy danh sách công việc yêu thích thất bại",
 

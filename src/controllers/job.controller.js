@@ -1,51 +1,65 @@
-import { MESSAGE } from '../constants/message.js';
-import ErrorResponse from '../lib/helper/ErrorResponse.js';
-import Tag from '../models/Tag.js';
-import Job from '../models/Job.js';
-import Application from '../models/Application.js';
-import JobFavorite from '../models/JobFavorite.js';
-import Category from '../models/Category.js';
-import Company from '../models/Company.js';
-import { toResultOk } from '../results/Result.js';
-
+import { MESSAGE } from "../constants/message.js";
+import ErrorResponse from "../lib/helper/ErrorResponse.js";
+import Tag from "../models/Tag.js";
+import Job from "../models/Job.js";
+import Application from "../models/Application.js";
+import JobFavorite from "../models/JobFavorite.js";
+import Category from "../models/Category.js";
+import Company from "../models/Company.js";
+import { toResultOk } from "../results/Result.js";
+import { getEmbedding } from "../lib/vectorstores/embedding.js";
+import { upsertItems, deleteItems } from "../lib/vectorstores/pineconeStore.js";
 
 export const getAllJobs = async (req, res) => {
-  const { search, categoryId, jobType, experience, isActive = true, page = 1, limit = 15, minSalary, maxSalary, remote } = req.query;
+  const {
+    search,
+    categoryId,
+    jobType,
+    experience,
+    isActive = true,
+    page = 1,
+    limit = 15,
+    minSalary,
+    maxSalary,
+    remote,
+  } = req.query;
   const userId = req.user?._id || null;
 
   let query = {};
 
   if (search) {
-    const tags = await Tag.find({ name: { $regex: search, $options: 'i' } }).select('_id');
-    const tagIds = tags.map(tag => tag._id);
-    const categories = await Category.find({ name: { $regex: search, $options: 'i' } }).select('_id');
-    const categoryIdsFromSearch = categories.map(c => c._id);
-    const companies = await Company.find({ name: { $regex: search, $options: 'i' } }).select('_id');
-    const companyIdsFromSearch = companies.map(c => c._id);
+    const tags = await Tag.find({ name: { $regex: search, $options: "i" } }).select("_id");
+    const tagIds = tags.map((tag) => tag._id);
+    const categories = await Category.find({ name: { $regex: search, $options: "i" } }).select(
+      "_id"
+    );
+    const categoryIdsFromSearch = categories.map((c) => c._id);
+    const companies = await Company.find({ name: { $regex: search, $options: "i" } }).select("_id");
+    const companyIdsFromSearch = companies.map((c) => c._id);
 
     query.$or = [
-      { title: { $regex: search, $options: 'i' } },
-      { location: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i' } },
-      { requirements: { $regex: search, $options: 'i' } },
-      { desirable: { $regex: search, $options: 'i' } },
+      { title: { $regex: search, $options: "i" } },
+      { location: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+      { requirements: { $regex: search, $options: "i" } },
+      { desirable: { $regex: search, $options: "i" } },
       { tags: { $in: tagIds } },
       { category: { $in: categoryIdsFromSearch } },
       { company: { $in: companyIdsFromSearch } },
-      { country: { $regex: search, $options: 'i' } },
-      { city: { $regex: search, $options: 'i' } },
-      { jobLevel: { $regex: search, $options: 'i' } },
-      { experience: { $regex: search, $options: 'i' } },
-      { education: { $regex: search, $options: 'i' } },
+      { country: { $regex: search, $options: "i" } },
+      { city: { $regex: search, $options: "i" } },
+      { jobLevel: { $regex: search, $options: "i" } },
+      { experience: { $regex: search, $options: "i" } },
+      { education: { $regex: search, $options: "i" } },
     ];
   }
   if (categoryId) query.category = categoryId;
   if (jobType) query.jobType = jobType;
-  if (experience) query.experience = experience; 
-  if (remote !== undefined) query.remote = remote === 'true';
+  if (experience) query.experience = experience;
+  if (remote !== undefined) query.remote = remote === "true";
   // Apply isActive as an AND filter
-  if (typeof isActive !== 'undefined') {
-    query.isActive = (typeof isActive === 'string') ? (isActive === 'true') : !!isActive;
+  if (typeof isActive !== "undefined") {
+    query.isActive = typeof isActive === "string" ? isActive === "true" : !!isActive;
   }
 
   if (minSalary || maxSalary) {
@@ -67,25 +81,25 @@ export const getAllJobs = async (req, res) => {
   const jobs = await Job.find(query)
     .skip(skip)
     .limit(parseInt(limit))
-    .populate({ path: 'recruiter', select: 'firstName lastName -_id' })
-    .populate({ path: 'category', select: 'name' })
-    .populate({ path: 'company', select: 'name logo' })
-    .populate({ path: 'tags', select: 'name -_id' })
+    .populate({ path: "recruiter", select: "firstName lastName -_id" })
+    .populate({ path: "category", select: "name" })
+    .populate({ path: "company", select: "name logo" })
+    .populate({ path: "tags", select: "name -_id" })
     .lean();
 
   // Add isFavorite flag for each job based on JobFavorite by userId
   let favoriteSet = new Set();
   if (userId && jobs.length) {
-    const jobIds = jobs.map(j => j._id);
+    const jobIds = jobs.map((j) => j._id);
     const favorites = await JobFavorite.find({ candidate: userId, job: { $in: jobIds } })
-      .select('job')
+      .select("job")
       .lean();
-    favoriteSet = new Set(favorites.map(f => String(f.job)));
+    favoriteSet = new Set(favorites.map((f) => String(f.job)));
   }
 
-  const jobsWithFavorite = jobs.map(j => ({
+  const jobsWithFavorite = jobs.map((j) => ({
     ...j,
-    isFavorite: favoriteSet.has(String(j._id))
+    isFavorite: favoriteSet.has(String(j._id)),
   }));
 
   const total = await Job.countDocuments(query);
@@ -95,17 +109,17 @@ export const getAllJobs = async (req, res) => {
       msg: MESSAGE.JOB_FETCH_SUCCESS,
       data: {
         jobs: jobsWithFavorite,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
       },
       pagination: {
         total,
         page: parseInt(page),
         limit: parseInt(limit),
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     })
   );
-}
+};
 
 // toggle favorite a job
 export const toggleFavoriteAJob = async (req, res) => {
@@ -126,7 +140,7 @@ export const toggleFavoriteAJob = async (req, res) => {
     await newFavorite.save();
     res.json(toResultOk({ msg: MESSAGE.JOB_FAVORITE_ADDED }));
   }
-}
+};
 
 // create new job
 export const createJob = async (req, res) => {
@@ -136,8 +150,94 @@ export const createJob = async (req, res) => {
   if (!result) {
     throw new ErrorResponse(400, MESSAGE.JOB_CREATE_FAILED);
   }
+
+  // Populate job data for embedding
+  const populatedJob = await Job.findById(result._id)
+    .populate({ path: "category", select: "name" })
+    .populate({ path: "company", select: "name" })
+    .populate({ path: "tags", select: "name" })
+    .populate({ path: "recruiter", select: "firstName lastName" });
+
+  // Create text content for embedding
+  const tagsText = populatedJob.tags?.map((tag) => tag.name).join(", ") || "";
+  const categoryText = populatedJob.category?.name || "";
+  const companyText = populatedJob.company?.name || "";
+  const recruiterName = populatedJob.recruiter
+    ? `${populatedJob.recruiter.firstName || ""} ${populatedJob.recruiter.lastName || ""}`.trim()
+    : "";
+
+  const jobText = `
+Title: ${populatedJob.title}
+Company: ${companyText}
+Category: ${categoryText}
+Tags: ${tagsText}
+Role: ${populatedJob.role || ""}
+Description: ${populatedJob.description || ""}
+Requirements: ${populatedJob.requirements || ""}
+Desirable: ${populatedJob.desirable || ""}
+Benefits: ${populatedJob.benefits || ""}
+Location: ${populatedJob.location || ""}
+City: ${populatedJob.city || ""}
+Country: ${populatedJob.country || ""}
+Job Type: ${populatedJob.jobType || ""}
+Experience: ${populatedJob.experience || ""}
+Job Level: ${populatedJob.jobLevel || ""}
+Education: ${populatedJob.education || ""}
+Salary: ${populatedJob.minSalary || ""} - ${populatedJob.maxSalary || ""} ${populatedJob.salaryType || ""}
+Remote: ${populatedJob.remote ? "Yes" : "No"}
+  `.trim();
+
+  try {
+    // Generate embedding for the job
+    const embedding = await getEmbedding(jobText);
+
+    // Upsert to Pinecone with full metadata
+    await upsertItems([
+      {
+        id: result._id.toString(),
+        values: embedding,
+        metadata: {
+          text: jobText,
+          title: populatedJob.title,
+          company: companyText,
+          companyId: populatedJob.company?._id?.toString() || "",
+          category: categoryText,
+          categoryId: populatedJob.category?._id?.toString() || "",
+          tags: tagsText,
+          role: populatedJob.role || "",
+          description: populatedJob.description || "",
+          requirements: populatedJob.requirements || "",
+          desirable: populatedJob.desirable || "",
+          benefits: populatedJob.benefits || "",
+          location: populatedJob.location || "",
+          city: populatedJob.city || "",
+          country: populatedJob.country || "",
+          jobType: populatedJob.jobType || "",
+          experience: populatedJob.experience || "",
+          jobLevel: populatedJob.jobLevel || "",
+          education: populatedJob.education || "",
+          minSalary: populatedJob.minSalary || 0,
+          maxSalary: populatedJob.maxSalary || 0,
+          salaryType: populatedJob.salaryType || "",
+          remote: populatedJob.remote || false,
+          vacancies: populatedJob.vacancies || 0,
+          applyType: populatedJob.applyType || "",
+          expiration: populatedJob.expiration ? populatedJob.expiration.toISOString() : "",
+          recruiterName: recruiterName,
+          recruiterId: populatedJob.recruiter?._id?.toString() || "",
+          isActive: populatedJob.isActive,
+          createdAt: result.createdAt.toISOString(),
+          updatedAt: result.updatedAt.toISOString(),
+        },
+      },
+    ]);
+  } catch (embeddingError) {
+    console.error("Error creating embedding for job:", embeddingError);
+    // Don't throw error, job is still created successfully
+  }
+
   res.json(toResultOk({ statusCode: 201, msg: MESSAGE.JOB_CREATE_SUCCESS, data: result }));
-}
+};
 
 // get job by id
 export const getJobById = async (req, res) => {
@@ -146,11 +246,11 @@ export const getJobById = async (req, res) => {
   const userId = req.user?._id || null;
 
   const job = await Job.findById(id)
-    .populate({ path: 'recruiter', select: 'username firstName lastName -_id' })
-    .populate({ path: 'category', select: 'name' })
-    .populate({ path: 'company', select: 'name logo' })
-    .populate({ path: 'company', select: 'name logo' })
-    .populate({ path: 'tags', select: 'name' });
+    .populate({ path: "recruiter", select: "username firstName lastName -_id" })
+    .populate({ path: "category", select: "name" })
+    .populate({ path: "company", select: "name logo" })
+    .populate({ path: "company", select: "name logo" })
+    .populate({ path: "tags", select: "name" });
   if (!job) {
     throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
   }
@@ -165,19 +265,108 @@ export const getJobById = async (req, res) => {
   jobObj.isFavorite = isFavorite;
 
   res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobObj }));
-}
+};
 
 // update job by id
 export const updateJob = async (req, res) => {
   const recruiterId = req?.user._id;
   const { id } = req.params;
-  const updatedJob = await Job.findByIdAndUpdate(id, { ...req.body, recruiter: recruiterId }, { new: true });
+  const updatedJob = await Job.findByIdAndUpdate(
+    id,
+    { ...req.body, recruiter: recruiterId },
+    { new: true }
+  );
   if (!updatedJob) {
     throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
   }
-  res.json(toResultOk({ msg: MESSAGE.JOB_UPDATE_SUCCESS, data: updatedJob }));
-}
 
+  // Populate job data for embedding
+  const populatedJob = await Job.findById(updatedJob._id)
+    .populate({ path: "category", select: "name" })
+    .populate({ path: "company", select: "name" })
+    .populate({ path: "tags", select: "name" })
+    .populate({ path: "recruiter", select: "firstName lastName" });
+
+  // Create text content for embedding
+  const tagsText = populatedJob.tags?.map((tag) => tag.name).join(", ") || "";
+  const categoryText = populatedJob.category?.name || "";
+  const companyText = populatedJob.company?.name || "";
+  const recruiterName = populatedJob.recruiter
+    ? `${populatedJob.recruiter.firstName || ""} ${populatedJob.recruiter.lastName || ""}`.trim()
+    : "";
+
+  const jobText = `
+Title: ${populatedJob.title}
+Company: ${companyText}
+Category: ${categoryText}
+Tags: ${tagsText}
+Role: ${populatedJob.role || ""}
+Description: ${populatedJob.description || ""}
+Requirements: ${populatedJob.requirements || ""}
+Desirable: ${populatedJob.desirable || ""}
+Benefits: ${populatedJob.benefits || ""}
+Location: ${populatedJob.location || ""}
+City: ${populatedJob.city || ""}
+Country: ${populatedJob.country || ""}
+Job Type: ${populatedJob.jobType || ""}
+Experience: ${populatedJob.experience || ""}
+Job Level: ${populatedJob.jobLevel || ""}
+Education: ${populatedJob.education || ""}
+Salary: ${populatedJob.minSalary || ""} - ${populatedJob.maxSalary || ""} ${populatedJob.salaryType || ""}
+Remote: ${populatedJob.remote ? "Yes" : "No"}
+  `.trim();
+
+  try {
+    // Generate embedding for the updated job
+    const embedding = await getEmbedding(jobText);
+
+    // Upsert to Pinecone (will update if exists) with full metadata
+    await upsertItems([
+      {
+        id: updatedJob._id.toString(),
+        values: embedding,
+        metadata: {
+          text: jobText,
+          title: populatedJob.title,
+          company: companyText,
+          companyId: populatedJob.company?._id?.toString() || "",
+          category: categoryText,
+          categoryId: populatedJob.category?._id?.toString() || "",
+          tags: tagsText,
+          role: populatedJob.role || "",
+          description: populatedJob.description || "",
+          requirements: populatedJob.requirements || "",
+          desirable: populatedJob.desirable || "",
+          benefits: populatedJob.benefits || "",
+          location: populatedJob.location || "",
+          city: populatedJob.city || "",
+          country: populatedJob.country || "",
+          jobType: populatedJob.jobType || "",
+          experience: populatedJob.experience || "",
+          jobLevel: populatedJob.jobLevel || "",
+          education: populatedJob.education || "",
+          minSalary: populatedJob.minSalary || 0,
+          maxSalary: populatedJob.maxSalary || 0,
+          salaryType: populatedJob.salaryType || "",
+          remote: populatedJob.remote || false,
+          vacancies: populatedJob.vacancies || 0,
+          applyType: populatedJob.applyType || "",
+          expiration: populatedJob.expiration ? populatedJob.expiration.toISOString() : "",
+          recruiterName: recruiterName,
+          recruiterId: populatedJob.recruiter?._id?.toString() || "",
+          isActive: populatedJob.isActive,
+          createdAt: populatedJob.createdAt.toISOString(),
+          updatedAt: updatedJob.updatedAt.toISOString(),
+        },
+      },
+    ]);
+  } catch (embeddingError) {
+    console.error("Error updating embedding for job:", embeddingError);
+    // Don't throw error, job is still updated successfully
+  }
+
+  res.json(toResultOk({ msg: MESSAGE.JOB_UPDATE_SUCCESS, data: updatedJob }));
+};
 
 // deactivate job by id
 export const deactivateJob = async (req, res) => {
@@ -188,15 +377,24 @@ export const deactivateJob = async (req, res) => {
   }
   job.isActive = false;
   await job.save();
+
+  // Remove from Pinecone when job is deactivated
+  try {
+    await deleteItems([id]);
+  } catch (deleteError) {
+    console.error("Error deleting embedding from Pinecone:", deleteError);
+    // Don't throw error, job is still deactivated successfully
+  }
+
   res.json(toResultOk({ msg: MESSAGE.JOB_DEACTIVATE_SUCCESS }));
-}
+};
 
 // get jobs by recruiter id
 export const getJobsByRecruiterId = async (req, res) => {
   const recruiterId = req.user._id;
   const jobs = await Job.find({ recruiter: recruiterId });
   res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobs }));
-}
+};
 
 // get number of application of a job by job id
 export const getNumberOfApplicationsByJobId = async (req, res) => {
