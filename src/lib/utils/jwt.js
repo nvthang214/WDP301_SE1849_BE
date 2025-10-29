@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import { OAuth2Client } from "google-auth-library";
 import { SignJWT, jwtVerify } from "jose";
-import { TOKEN_EXPIRATION } from "../constants/variable.js";
+import { TOKEN_EXPIRATION } from "../../constants/variable.js";
 
 config();
 

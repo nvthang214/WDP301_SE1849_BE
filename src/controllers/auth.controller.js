@@ -13,9 +13,9 @@ import {
   verifyEmailToken,
   verifyGoogleToken,
   verifyRefreshToken,
-} from "../utils/jwt.js";
-import { mailOptions } from "../utils/mailOption.js";
-import sendMail from "../utils/sendMail.js";
+} from "../lib/utils/jwt.js";
+import { mailOptions } from "../lib/utils/mailOption.js";
+import sendMail from "../lib/utils/sendMail.js";
 config();
 
 /**

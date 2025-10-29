@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@eslint/js": "^9.37.0",
+    "@faker-js/faker": "^9.9.0",
+    "@pinecone-database/pinecone": "^6.1.2",
     "axios": "^1.9.0",
     "bcryptjs": "^3.0.2",
     "be": "file:",
@@ -29,6 +31,7 @@
     "multer": "^2.0.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.3",
+    "openai": "^6.7.0",
     "socket.io": "^4.8.1",
     "stripe": "^18.2.1",
     "swagger-jsdoc": "^6.2.8",

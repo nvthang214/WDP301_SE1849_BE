@@ -3,7 +3,7 @@ import validator from "validator";
 import { MESSAGE } from "../constants/message.js";
 import ErrorResponse from "../lib/helper/ErrorResponse.js";
 import User from "../models/User.js";
-import { verifyAccessToken, verifyResetToken } from "../utils/jwt.js";
+import { verifyAccessToken, verifyResetToken } from "../lib/utils/jwt.js";
 config();
 /**
  * Middleware xác thực JWT cho các route yêu cầu đăng nhập.
@@ -27,8 +27,10 @@ export const authMiddleware = async (req, res, next) => {
 
   try {
     const user_raw = req.user;
-    const user = await User.findById(user_raw.userId).populate('role', 'name -_id').select('-password');
-    
+    const user = await User.findById(user_raw.userId)
+      .populate("role", "name -_id")
+      .select("-password");
+
     if (!user) throw new ErrorResponse(404, MESSAGE.USER_NOT_FOUND);
     if (!user.isActive) throw new ErrorResponse(403, MESSAGE.USER_BANNED);
     req.user = user;

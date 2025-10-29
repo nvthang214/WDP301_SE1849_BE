@@ -19,10 +19,10 @@ const companyRoutes = express.Router();
 // get company by recruiter ID
 
 // get all companies
-companyRoutes.get("/", wrapAsync(getAllCompanies));
+companyRoutes.get("/", getAllCompanies);
 
 // get companies by location
-companyRoutes.get("/location", wrapAsync(getAllCompaniesByLocation));
+companyRoutes.get("/location", getAllCompaniesByLocation);
 
 companyRoutes.get('/details/:id', wrapAsync(getCompanyById));
 companyRoutes.use(authMiddleware, recruiterMiddleware);
