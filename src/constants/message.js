@@ -105,6 +105,14 @@ export const MESSAGE = {
   // DEACTIVATE JOB
   JOB_DEACTIVATE_SUCCESS: "Hủy kích hoạt công việc thành công",
   JOB_DEACTIVATE_FAILED: "Hủy kích hoạt công việc thất bại",
+  // ACTIVATE JOB
+  JOB_ACTIVATE_SUCCESS: "Kích hoạt công việc thành công",
+  JOB_ACTIVATE_FAILED: "Kích hoạt công việc thất bại",
+  // COUNT APPLICATIONS FOR A JOB
+  JOB_COUNT_APPLICATIONS_SUCCESS: "Lấy số lượng ứng tuyển cho công việc thành công",
+  JOB_COUNT_APPLICATIONS_FAILED: "Lấy số lượng ứng tuyển cho công việc thất bại",
+  JOB_APPLICATIONS_FETCH_SUCCESS: "Lấy danh sách ứng tuyển cho công việc thành công",
+  JOB_APPLICATIONS_FETCH_FAILED: "Lấy danh sách ứng tuyển cho công việc thất bại",
 
   /////////////////////////////////////////////////////
   // THÔNG BÁO TAG

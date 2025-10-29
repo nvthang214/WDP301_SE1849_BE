@@ -7,6 +7,7 @@ import JobFavorite from '../models/JobFavorite.js';
 import Category from '../models/Category.js';
 import Company from '../models/Company.js';
 import { toResultOk } from '../results/Result.js';
+import Profile from '../models/Profile.js';
 
 
 export const getAllJobs = async (req, res) => {
@@ -203,4 +204,48 @@ export const getNumberOfApplicationsByJobId = async (req, res) => {
   const { jobId } = req.params;
   const count = await Application.countDocuments({ job: jobId });
   res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: { count } }));
+};
+
+//get candidate applications for a job by job id
+export const getApplicationsByJobId = async (req, res) => {
+  const { jobId } = req.params;
+  const applications = await Application.find({ job: jobId })
+    .populate({ path: 'job', select: 'title role' })
+    .populate({ path: 'candidate', select: 'firstName lastName email phoneNumber avatar resume' })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const candidateIds = applications
+    .map(app => app.candidate?._id)
+    .filter(Boolean);
+
+  let profilesByUserId = new Map();
+  if (candidateIds.length) {
+    const profiles = await Profile.find({ user: { $in: candidateIds } })
+      .select('user experience education')
+      .lean();
+    profilesByUserId = new Map(profiles.map(profile => [String(profile.user), profile]));
+  }
+
+  const formattedApplications = applications.map(app => {
+    const candidate = app.candidate || {};
+    const profile = candidate._id ? profilesByUserId.get(String(candidate._id)) : undefined;
+
+    return {
+      _id: app._id,
+      candidateName: [candidate.firstName, candidate.lastName].filter(Boolean).join(' ').trim(),
+      role: app.job?.role || '',
+      experience: profile?.experience || '',
+      education: profile?.education || '',
+      appliedDate: app.createdAt,
+      avatar: candidate.avatar || '',
+      resume: app.resume || '',
+      email: candidate.email || '',
+      phone: candidate.phoneNumber || '',
+      status: app.status || '',
+      cv : profile?.cv || ''
+    };
+  });
+
+  res.json(toResultOk({ msg: MESSAGE.JOB_APPLICATIONS_FETCH_SUCCESS, data: formattedApplications }));
 };
