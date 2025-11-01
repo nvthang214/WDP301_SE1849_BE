@@ -131,17 +131,58 @@ export const updateUserRole = async (req, res) => {
   }
 };
 
-// Get all users (for admin to view)
+// Get all users (for admin to view) with pagination
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find()
+    const { page = 1, limit = 10, search = '', role = '', status = '' } = req.query;
+    
+    // Build query
+    let query = {};
+    
+    // Search filter
+    if (search) {
+      query.$or = [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+    
+    // Role filter
+    if (role) {
+      const roleDoc = await Role.findOne({ name: role });
+      if (roleDoc) {
+        query.role = roleDoc._id;
+      }
+    }
+    
+    // Status filter
+    if (status === 'active') {
+      query.isActive = true;
+    } else if (status === 'inactive') {
+      query.isActive = false;
+    }
+    
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await User.countDocuments(query);
+    
+    const users = await User.find(query)
       .populate("role", "name")
-      .select("-password"); // Exclude password from response
+      .select("-password")
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
       message: "Users retrieved successfully",
       data: users,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit)),
+      },
     });
   } catch (error) {
     console.error("Error getting users:", error);
@@ -204,18 +245,51 @@ export const getUserById = async (req, res) => {
   }
 };
 
-// Get all jobs (for admin) - aligned with current Job schema
+// Get all jobs (for admin) with pagination - aligned with current Job schema
 export const getAllJobs = async (req, res) => {
   try {
-    const jobs = await Job.find()
+    const { page = 1, limit = 10, search = '', status = '' } = req.query;
+    
+    // Build query
+    let query = {};
+    
+    // Search filter
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { location: { $regex: search, $options: "i" } },
+      ];
+    }
+    
+    // Status filter
+    if (status === 'active') {
+      query.isActive = true;
+    } else if (status === 'inactive') {
+      query.isActive = false;
+    }
+    
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await Job.countDocuments(query);
+    
+    const jobs = await Job.find(query)
       .populate("company", "name")
       .populate("category", "name")
-      .populate({ path: "recruiter", select: "firstName lastName email" });
+      .populate({ path: "recruiter", select: "firstName lastName email" })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
       message: "Jobs retrieved successfully",
       data: jobs,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit)),
+      },
     });
   } catch (error) {
     console.error("Error getting jobs:", error);
