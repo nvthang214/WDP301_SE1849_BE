@@ -254,3 +254,120 @@ export const getShortlistedApplicationsByRecruiter = async (req, res) => {
       .json(toResultError({ statusCode: 500, msg: MESSAGE.INTERNAL_SERVER_ERROR }));
   }
 };
+
+export const updateApplicationStatus = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res
+        .status(400)
+        .json(toResultError({ statusCode: 400, msg: MESSAGE.MISSING_FIELDS }));
+    }
+
+    const allowedStatuses = ["pending", "shortlisted", "interview", "rejected", "hired"];
+    const normalizedStatus = String(status).trim().toLowerCase();
+
+    if (!allowedStatuses.includes(normalizedStatus)) {
+      return res
+        .status(400)
+        .json(
+          toResultError({
+            statusCode: 400,
+            msg: "Invalid status. Allowed: pending, shortlisted, interview, rejected, hired",
+          })
+        );
+    }
+
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res
+        .status(404)
+        .json(toResultError({ statusCode: 404, msg: "Application not found" }));
+    }
+
+    // Verify recruiter has access to this job (belongs to their company)
+    const job = await Job.findById(application.job).populate("company");
+    if (!job) {
+      return res.status(404).json(toResultError({ statusCode: 404, msg: MESSAGE.JOB_NOT_FOUND }));
+    }
+
+    const recruiterCompany = await Company.findOne({ recruiter: req.user._id });
+    if (!recruiterCompany) {
+      return res
+        .status(404)
+        .json(toResultError({ statusCode: 404, msg: "No company found for this recruiter" }));
+    }
+
+    if (job.company._id.toString() !== recruiterCompany._id.toString()) {
+      return res.status(403).json(toResultError({ statusCode: 403, msg: MESSAGE.UNAUTHORIZED }));
+    }
+
+    // Transition rules: forward-only, with terminal statuses
+    const currentStatus = String(application.status || "pending").toLowerCase();
+    const allowedNext = {
+      pending: ["shortlisted", "interview", "rejected"],
+      shortlisted: ["interview", "rejected"],
+      interview: ["hired", "rejected"],
+      hired: [],
+      rejected: [],
+    };
+
+    // No change
+    if (normalizedStatus === currentStatus) {
+      return res
+        .status(400)
+        .json(
+          toResultError({ statusCode: 400, msg: "Status is unchanged" })
+        );
+    }
+
+    // Terminal check
+    if (["hired", "rejected"].includes(currentStatus)) {
+      return res
+        .status(400)
+        .json(
+          toResultError({ statusCode: 400, msg: `Cannot update status from terminal state: ${currentStatus}` })
+        );
+    }
+
+    // Validate forward transition
+    const nextAllowed = allowedNext[currentStatus] || [];
+    if (!nextAllowed.includes(normalizedStatus)) {
+      return res
+        .status(400)
+        .json(
+          toResultError({ statusCode: 400, msg: `Invalid transition from '${currentStatus}' to '${normalizedStatus}'` })
+        );
+    }
+
+    application.status = normalizedStatus;
+    await application.save();
+
+    const populatedApplication = await Application.findById(applicationId)
+      .populate({
+        path: "candidate",
+        select: "firstName lastName email phoneNumber avatar",
+      })
+      .populate({
+        path: "job",
+        select: "title company role location jobType",
+        populate: {
+          path: "company",
+          select: "name logo",
+        },
+      });
+
+    return res.status(200).json(
+      toResultOk({
+        data: populatedApplication,
+      })
+    );
+  } catch (error) {
+    console.error("Error updating application status:", error);
+    return res
+      .status(500)
+      .json(toResultError({ statusCode: 500, msg: MESSAGE.INTERNAL_SERVER_ERROR }));
+  }
+};

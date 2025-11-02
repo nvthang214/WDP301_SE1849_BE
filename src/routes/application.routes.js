@@ -10,7 +10,7 @@ import {
   getAllApplicationsByRecruiter,
   getShortlistedApplicationsByRecruiter,
   //   getAllApplications,
-  //   updateApplicationStatus,
+  updateApplicationStatus,
 } from "../controllers/application.controller.js";
 
 const router = express.Router();
@@ -18,7 +18,8 @@ router.use(authMiddleware, recruiterMiddleware);
 
 // Recruiter routes
 // router.get('/applications', wrapAsync(getAllApplications));
-// router.put("/applications/:applicationId/status", wrapAsync(updateApplicationStatus));
+// FIX: mount path in app.routes.js is "/applications", so this route should be relative
+router.put("/:applicationId/status", wrapAsync(updateApplicationStatus));
 
 // Get all applications for recruiter's company
 router.get("/", wrapAsync(getAllApplicationsByRecruiter));
