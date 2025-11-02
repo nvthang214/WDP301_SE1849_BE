@@ -131,9 +131,10 @@ export const getMyUpgradeRequest = async (req, res) => {
       .sort({ createdAt: -1 });
 
     if (!upgradeRequest) {
-      return res.status(404).json({
-        success: false,
+      return res.status(200).json({
+        success: true,
         message: "No upgrade request found",
+        data: null,
       });
     }
 

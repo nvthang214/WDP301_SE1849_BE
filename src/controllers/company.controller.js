@@ -22,7 +22,7 @@ export const getAllCompanies = async (req, res) => {
   const companies = await Company.find(query).skip(skip).limit(parseInt(limit));
   const total = await Company.countDocuments(query);
   
-  // Trả về kết quả (có thể là mảng rỗng)
+  // Trả về kết quả (có thể là mảng rỗng nếu không có companies)
   res.json(
     toResultOk({
       msg: companies.length > 0 ? MESSAGE.COMPANY_FETCH_SUCCESS : "No companies found",
