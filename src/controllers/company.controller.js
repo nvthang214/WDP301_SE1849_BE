@@ -21,12 +21,11 @@ export const getAllCompanies = async (req, res) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
   const companies = await Company.find(query).skip(skip).limit(parseInt(limit));
   const total = await Company.countDocuments(query);
-  if (companies.length === 0) {
-    throw new ErrorResponse(400, MESSAGE.COMPANY_FETCH_FAILED);
-  }
+  
+  // Trả về kết quả (có thể là mảng rỗng)
   res.json(
     toResultOk({
-      msg: MESSAGE.COMPANY_FETCH_SUCCESS,
+      msg: companies.length > 0 ? MESSAGE.COMPANY_FETCH_SUCCESS : "No companies found",
       data: {
         companies,
         totalPages: Math.ceil(total / limit),
