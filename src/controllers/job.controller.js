@@ -9,15 +9,6 @@ import Company from "../models/Company.js";
 import { toResultOk } from "../results/Result.js";
 import { getEmbedding } from "../lib/vectorstores/embedding.js";
 import { upsertItems, deleteItems } from "../lib/vectorstores/pineconeStore.js";
-import { MESSAGE } from '../constants/message.js';
-import ErrorResponse from '../lib/helper/ErrorResponse.js';
-import Tag from '../models/Tag.js';
-import Job from '../models/Job.js';
-import Application from '../models/Application.js';
-import JobFavorite from '../models/JobFavorite.js';
-import Category from '../models/Category.js';
-import Company from '../models/Company.js';
-import { toResultOk } from '../results/Result.js';
 import Profile from '../models/Profile.js';
 
 
