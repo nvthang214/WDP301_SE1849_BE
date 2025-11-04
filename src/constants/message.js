@@ -88,6 +88,7 @@ export const MESSAGE = {
   CANDIDATE_APPLY_JOB_SUCCESS: "Ứng tuyển công việc thành công",
   CANDIDATE_APPLY_JOB_FAILED: "Ứng tuyển công việc thất bại",
   CANDIDATE_APPLY_JOB_ROLE_INVALID: "Chỉ tài khoản ứng viên mới được phép ứng tuyển",
+  CANDIDATE_APPLY_JOB_CV_REQUIRED: "Vui lòng tải CV lên trước khi ứng tuyển",
 
   /////////////////////////////////////////////////////
   // THÔNG BÁO JOB
