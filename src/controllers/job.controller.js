@@ -144,6 +144,30 @@ export const toggleFavoriteAJob = async (req, res) => {
   }
 };
 
+// toggle job status (active/inactive)
+export const toggleJobStatus = async (req, res) => {
+  const { id } = req.params;
+  const job = await Job.findById(id);
+  if (!job) {
+    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
+  }
+  job.isActive = !job.isActive;
+  await job.save();
+  res.json(toResultOk({ msg: MESSAGE.JOB_STATUS_TOGGLED, data: job }));
+};
+
+// expire job by id
+export const expireJobById = async (req, res) => {
+  const { id } = req.params;
+  const job = await Job.findById(id);
+  if (!job) {
+    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
+  }
+  job.expiration = new Date();
+  await job.save();
+  res.json(toResultOk({ msg: MESSAGE.JOB_EXPIRED, data: job }));
+};
+
 // create new job
 export const createJob = async (req, res) => {
   const recruiterId = req?.user._id;
