@@ -424,9 +424,7 @@ export const addCandidateSocial = async (req, res) => {
     if (!Array.isArray(social))
       return res.json(toResultError({ statusCode: 400, msg: MESSAGE.CANDIDATE_SOCIAL_ALREADY_EXISTS }));
 
-    const profile = await Profile.findOne({ user: user._id });
-    if (!profile)
-      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.PROFILE_NOT_FOUND }));
+    let profile = await Profile.findOne({ user: user._id });
 
     // Map array → object
     const newSocial = {};
@@ -436,8 +434,15 @@ export const addCandidateSocial = async (req, res) => {
       }
     }
 
-    profile.social = newSocial;
-    await profile.save();
+    if (!profile) {
+      profile = await Profile.create({
+        user: user._id,
+        social: newSocial,
+      });
+    } else {
+      profile.social = newSocial;
+      await profile.save();
+    }
 
     return res.json(
       toResultOk({
@@ -472,12 +477,17 @@ export const updateCandidateSocial = async (req, res) => {
       );
     }
 
-    const profile = await Profile.findOne({ user: user._id });
-    if (!profile)
-      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.PROFILE_NOT_FOUND }));
+    let profile = await Profile.findOne({ user: user._id });
 
-    profile.social = { ...(profile.social || {}), [platform]: url };
-    await profile.save();
+    if (!profile) {
+      profile = await Profile.create({
+        user: user._id,
+        social: { [platform]: url },
+      });
+    } else {
+      profile.social = { ...(profile.social || {}), [platform]: url };
+      await profile.save();
+    }
 
     return res.json(
       toResultOk({
@@ -835,6 +845,20 @@ export const applyJob = async (req, res) => {
       );
     }
 
+    const profile = await Profile.findOne({ user: user._id }).select("cv").lean();
+    const hasProfileCv = Boolean(profile?.cv && String(profile.cv).trim());
+    const hasResumeInPayload =
+      typeof resume === "string" && resume.trim().length > 0;
+
+    if (!hasProfileCv && !hasResumeInPayload) {
+      return res.json(
+        toResultError({
+          statusCode: 400,
+          msg: MESSAGE.CANDIDATE_APPLY_JOB_CV_REQUIRED,
+        })
+      );
+    }
+
     const existingApplication = await Application.findOne({
       candidate: user._id,
       job: jobId,
@@ -849,7 +873,7 @@ export const applyJob = async (req, res) => {
     const application = await Application.create({
       candidate: user._id,
       job: jobId,
-      resume: resume || "",
+  resume: hasResumeInPayload ? resume.trim() : profile?.cv || "",
       coverLetter: coverLetter || "",
       status: "Pending",
     });

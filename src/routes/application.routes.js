@@ -11,6 +11,7 @@ import {
   getShortlistedApplicationsByRecruiter,
   //   getAllApplications,
   updateApplicationStatus,
+  downloadApplicationCv,
 } from "../controllers/application.controller.js";
 
 const router = express.Router();
@@ -34,5 +35,6 @@ router.get("/jobs/:jobId/candidates/filter", wrapAsync(filterCandidatesByStatus)
 // Apply for a job - support both POST and GET methods (auth temporarily disabled for testing)
 // router.post('/jobs/:jobId/apply', wrapAsync(applyForJob));
 router.get("/jobs/:jobId/apply", wrapAsync(applyForJob));
+router.get("/:applicationId/cv", wrapAsync(downloadApplicationCv));
 
 export default router;

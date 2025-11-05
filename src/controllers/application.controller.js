@@ -5,6 +5,8 @@ import { toResultOk, toResultError } from "../results/Result.js";
 import Job from "../models/Job.js";
 import User from "../models/User.js";
 import Company from "../models/Company.js";
+import Profile from "../models/Profile.js";
+import axios from "axios";
 
 // Apply for a job
 export const applyForJob = async (req, res) => {
@@ -36,20 +38,20 @@ export const applyForJob = async (req, res) => {
       return res.status(400).json(toResultError({ statusCode: 400, msg: MESSAGE.ALREADY_APPLIED }));
     }
 
-    // Validate resume and cover letter
-    const { resume, coverLetter } = req.body;
-
-    if (!resume) {
+    // Lấy CV từ Profile của candidate
+    const profile = await Profile.findOne({ user: candidateId }).select("cv");
+    if (!profile || !profile.cv) {
       return res
         .status(400)
-        .json(toResultError({ statusCode: 400, msg: "Resume is required for job application" }));
+        .json(toResultError({ statusCode: 400, msg: "Candidate CV not found in profile" }));
     }
+
+    const { coverLetter } = req.body;
 
     // Create new application with timestamp
     const application = new Application({
       job: jobId,
       candidate: candidateId,
-      resume: resume,
       coverLetter: coverLetter || "",
       status: "pending",
       appliedDate: new Date(),
@@ -57,7 +59,9 @@ export const applyForJob = async (req, res) => {
 
     await application.save();
 
-    return res.status(201).json(toResultOk({ data: application }));
+    // Trả về kèm CV từ profile cho recruiter sử dụng ngay
+    const enriched = { ...application.toObject(), resume: profile.cv };
+    return res.status(201).json(toResultOk({ data: enriched }));
   } catch (error) {
     console.error("Error applying for job:", error);
     return res
@@ -104,7 +108,16 @@ export const getCandidatesInJob = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    return res.status(200).json(toResultOk({ data: applications }));
+    // Lấy CV từ profile cho toàn bộ candidate trong danh sách
+    const candidateIds = applications.map((a) => (a.candidate?._id || a.candidate));
+    const profiles = await Profile.find({ user: { $in: candidateIds } }).select("user cv");
+    const cvMap = new Map(profiles.map((p) => [p.user.toString(), p.cv || null]));
+    const enriched = applications.map((a) => ({
+      ...a.toObject(),
+      resume: cvMap.get((a.candidate?._id || a.candidate).toString()) || null,
+    }));
+
+    return res.status(200).json(toResultOk({ data: enriched }));
   } catch (error) {
     console.error("Error getting candidates in job:", error);
     return res
@@ -143,7 +156,15 @@ export const filterCandidatesByStatus = async (req, res) => {
       select: "fullName email phone avatar",
     });
 
-    return res.status(200).json(toResultOk({ data: applications }));
+    const candidateIds = applications.map((a) => (a.candidate?._id || a.candidate));
+    const profiles = await Profile.find({ user: { $in: candidateIds } }).select("user cv");
+    const cvMap = new Map(profiles.map((p) => [p.user.toString(), p.cv || null]));
+    const enriched = applications.map((a) => ({
+      ...a.toObject(),
+      resume: cvMap.get((a.candidate?._id || a.candidate).toString()) || null,
+    }));
+
+    return res.status(200).json(toResultOk({ data: enriched }));
   } catch (error) {
     console.error("Error filtering candidates by status:", error);
     return res
@@ -194,7 +215,15 @@ export const getAllApplicationsByRecruiter = async (req, res) => {
     })
     .sort({ createdAt: -1 }); // Sort by newest first
 
-    return res.status(200).json(toResultOk(applications));
+    const candidateIds = applications.map((a) => (a.candidate?._id || a.candidate));
+    const profiles = await Profile.find({ user: { $in: candidateIds } }).select("user cv");
+    const cvMap = new Map(profiles.map((p) => [p.user.toString(), p.cv || null]));
+    const enriched = applications.map((a) => ({
+      ...a.toObject(),
+      resume: cvMap.get((a.candidate?._id || a.candidate).toString()) || null,
+    }));
+
+    return res.status(200).json(toResultOk({ data: enriched }));
   } catch (error) {
     console.error("Error getting all applications by recruiter:", error);
     return res
@@ -366,6 +395,106 @@ export const updateApplicationStatus = async (req, res) => {
     );
   } catch (error) {
     console.error("Error updating application status:", error);
+    return res
+      .status(500)
+      .json(toResultError({ statusCode: 500, msg: MESSAGE.INTERNAL_SERVER_ERROR }));
+  }
+};
+
+export const downloadApplicationCv = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+
+    if (!req.user) {
+      return res
+        .status(401)
+        .json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
+    }
+
+    const application = await Application.findById(applicationId)
+      .populate({
+        path: "job",
+        select: "company",
+        populate: { path: "company", select: "_id name" },
+      })
+      .populate({ path: "candidate", select: "firstName lastName email" });
+
+    if (!application) {
+      return res
+        .status(404)
+        .json(toResultError({ statusCode: 404, msg: "Application not found" }));
+    }
+
+    const recruiterCompany = await Company.findOne({ recruiter: req.user._id });
+    if (!recruiterCompany) {
+      return res
+        .status(404)
+        .json(
+          toResultError({ statusCode: 404, msg: "No company found for this recruiter" })
+        );
+    }
+
+    const appCompanyId = application.job?.company?._id || application.job?.company;
+    if (!appCompanyId || String(appCompanyId) !== String(recruiterCompany._id)) {
+      return res
+        .status(403)
+        .json(toResultError({ statusCode: 403, msg: MESSAGE.UNAUTHORIZED }));
+    }
+
+    const candidateId = application.candidate?._id || application.candidate;
+    const profile = await Profile.findOne({ user: candidateId }).select("cv");
+
+    const parseCvFieldLocal = (value) => {
+      if (!value) return null;
+      if (typeof value === "object" && value.url) return value;
+      if (typeof value === "string") {
+        try {
+          const parsed = JSON.parse(value);
+          if (parsed && typeof parsed === "object") return parsed;
+        } catch (e) {
+          return { url: value };
+        }
+      }
+      return null;
+    };
+
+    const cvData = parseCvFieldLocal(profile?.cv);
+    const cvUrl = cvData?.url;
+
+    if (!cvUrl) {
+      return res
+        .status(404)
+        .json(toResultError({ statusCode: 404, msg: "Candidate CV not found" }));
+    }
+
+    const fullName = [
+      application.candidate?.firstName || "",
+      application.candidate?.lastName || "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    const suggestedName = (fullName ? `${fullName} - CV` : "cv") + (cvData?.mimeType === "application/pdf" ? ".pdf" : "");
+    const safeFilename = suggestedName.replace(/[^\w\-.\s]/g, "").slice(0, 120) || "cv.pdf";
+
+    try {
+      const response = await axios.get(cvUrl, { responseType: "stream" });
+      const contentType = cvData?.mimeType || response.headers["content-type"] || "application/octet-stream";
+
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Content-Disposition", `attachment; filename="${safeFilename}"`);
+
+      response.data.pipe(res);
+    } catch (err) {
+      console.error("downloadApplicationCv error streaming:", err?.message || err);
+      return res
+        .status(502)
+        .json(
+          toResultError({ statusCode: 502, msg: "Unable to fetch CV from storage" })
+        );
+    }
+  } catch (error) {
+    console.error("downloadApplicationCv error:", error);
     return res
       .status(500)
       .json(toResultError({ statusCode: 500, msg: MESSAGE.INTERNAL_SERVER_ERROR }));
