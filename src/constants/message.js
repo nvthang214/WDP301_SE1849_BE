@@ -126,6 +126,14 @@ export const MESSAGE = {
   // CREATE TAG
   TAG_CREATE_SUCCESS: "Tạo thẻ thành công",
   TAG_CREATE_FAILED: "Tạo thẻ thất bại",
+  TAG_ALREADY_EXISTS: "This tag alredy exists",
+  // UPDATE TAG
+  TAG_UPDATE_SUCCESS: "Cập nhật thẻ thành công",
+  TAG_UPDATE_FAILED: "Cập nhật thẻ thất bại",
+  // DELETE TAG
+  TAG_DELETE_SUCCESS: "Xóa thẻ thành công",
+  TAG_DELETE_FAILED: "Xóa thẻ thất bại",
+  TAG_IN_USE: "Không thể xóa thẻ vì đang được sử dụng trong công việc",
 
   /////////////////////////////////////////////////////
   // THÔNG BÁO COMPANY
@@ -142,6 +150,14 @@ export const MESSAGE = {
   // CREATE CATEGORY
   CATEGORY_CREATE_SUCCESS: "Tạo danh mục thành công",
   CATEGORY_CREATE_FAILED: "Tạo danh mục thất bại",
+  CATEGORY_ALREADY_EXISTS: "This category already exists",
+  // UPDATE CATEGORY
+  CATEGORY_UPDATE_SUCCESS: "Cập nhật danh mục thành công",
+  CATEGORY_UPDATE_FAILED: "Cập nhật danh mục thất bại",
+  // DELETE CATEGORY
+  CATEGORY_DELETE_SUCCESS: "Xóa danh mục thành công",
+  CATEGORY_DELETE_FAILED: "Xóa danh mục thất bại",
+  CATEGORY_IN_USE: "Không thể xóa danh mục vì đang được sử dụng trong công việc",
 
   ////////////////////////////////////////////////////////
 
