@@ -25,7 +25,6 @@ export const getAllJobs = async (req, res) => {
     maxSalary,
     remote,
   } = req.query;
-  const userId = req.user?._id || null;
 
   let query = {};
 
@@ -89,6 +88,105 @@ export const getAllJobs = async (req, res) => {
     .populate({ path: "tags", select: "name -_id" })
     .lean();
 
+  const total = await Job.countDocuments(query);
+
+  res.json(
+    toResultOk({
+      msg: MESSAGE.JOB_FETCH_SUCCESS,
+      data: {
+        jobs: jobs,
+        totalPages: Math.ceil(total / limit),
+      },
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / limit),
+      },
+    })
+  );
+};
+export const getAllJobsWithAuth = async (req, res) => {
+  const {
+    search,
+    categoryId,
+    jobType,
+    experience,
+    isActive = true,
+    page = 1,
+    limit = 15,
+    minSalary,
+    maxSalary,
+    remote,
+  } = req.query;
+  const userId = req.user?._id || null;
+
+  let query = {};
+
+  if (search) {
+    const tags = await Tag.find({ name: { $regex: search, $options: "i" } }).select("_id");
+    const tagIds = tags.map((tag) => tag._id);
+    const categories = await Category.find({ name: { $regex: search, $options: "i" } }).select(
+      "_id"
+    );
+    const categoryIdsFromSearch = categories.map((c) => c._id);
+    const companies = await Company.find({ name: { $regex: search, $options: "i" } }).select("_id");
+    const companyIdsFromSearch = companies.map((c) => c._id);
+
+    query.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { location: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+      { requirements: { $regex: search, $options: "i" } },
+      { desirable: { $regex: search, $options: "i" } },
+      { tags: { $in: tagIds } },
+      { category: { $in: categoryIdsFromSearch } },
+      { company: { $in: companyIdsFromSearch } },
+      { country: { $regex: search, $options: "i" } },
+      { city: { $regex: search, $options: "i" } },
+      { jobLevel: { $regex: search, $options: "i" } },
+      { experience: { $regex: search, $options: "i" } },
+      { education: { $regex: search, $options: "i" } },
+    ];
+  }
+  if (categoryId) query.category = categoryId;
+  if (jobType) query.jobType = jobType;
+  if (experience) query.experience = experience;
+  if (remote !== undefined) query.remote = remote === "true";
+  // Exclude jobs where recruiter is the current user
+  if (userId) {
+    query.recruiter = { $ne: userId };
+  }
+  // Apply isActive as an AND filter
+  if (typeof isActive !== "undefined") {
+    query.isActive = typeof isActive === "string" ? isActive === "true" : !!isActive;
+  }
+
+  if (minSalary || maxSalary) {
+    query.$and = query.$and || [];
+    if (minSalary) {
+      query.$and.push({ minSalary: { $gte: Number(minSalary) } });
+    }
+    if (maxSalary) {
+      query.$and.push({ maxSalary: { $lte: Number(maxSalary) } });
+    }
+    if (query.$and.length === 1) {
+      query = { ...query, ...query.$and[0] };
+      delete query.$and;
+    }
+    if (query.$and && query.$and.length === 0) delete query.$and;
+  }
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const jobs = await Job.find(query)
+    .skip(skip)
+    .limit(parseInt(limit))
+    .populate({ path: "recruiter", select: "firstName lastName -_id" })
+    .populate({ path: "category", select: "name" })
+    .populate({ path: "company", select: "name logo" })
+    .populate({ path: "tags", select: "name -_id" })
+    .lean();
+
   // Add isFavorite flag for each job based on JobFavorite by userId
   let favoriteSet = new Set();
   if (userId && jobs.length) {
@@ -122,7 +220,6 @@ export const getAllJobs = async (req, res) => {
     })
   );
 };
-
 // toggle favorite a job
 export const toggleFavoriteAJob = async (req, res) => {
   const candidateId = req?.user._id;
@@ -142,30 +239,6 @@ export const toggleFavoriteAJob = async (req, res) => {
     await newFavorite.save();
     res.json(toResultOk({ msg: MESSAGE.JOB_FAVORITE_ADDED }));
   }
-};
-
-// toggle job status (active/inactive)
-export const toggleJobStatus = async (req, res) => {
-  const { id } = req.params;
-  const job = await Job.findById(id);
-  if (!job) {
-    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
-  }
-  job.isActive = !job.isActive;
-  await job.save();
-  res.json(toResultOk({ msg: MESSAGE.JOB_STATUS_TOGGLED, data: job }));
-};
-
-// expire job by id
-export const expireJobById = async (req, res) => {
-  const { id } = req.params;
-  const job = await Job.findById(id);
-  if (!job) {
-    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
-  }
-  job.expiration = new Date();
-  await job.save();
-  res.json(toResultOk({ msg: MESSAGE.JOB_EXPIRED, data: job }));
 };
 
 // create new job
@@ -269,6 +342,21 @@ Remote: ${populatedJob.remote ? "Yes" : "No"}
 export const getJobById = async (req, res) => {
   const { id } = req.params;
 
+  const job = await Job.findById(id)
+    .populate({ path: "recruiter", select: "username firstName lastName -_id" })
+    .populate({ path: "category", select: "name" })
+    .populate({ path: "company", select: "name logo" })
+    .populate({ path: "company", select: "name logo" })
+    .populate({ path: "tags", select: "name" });
+  if (!job) {
+    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
+  }
+  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: job }));
+};
+// get job by id with auth
+export const getJobByIdWithAuth = async (req, res) => {
+  const { id } = req.params;
+
   const userId = req.user?._id || null;
 
   const job = await Job.findById(id)
@@ -292,7 +380,6 @@ export const getJobById = async (req, res) => {
 
   res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobObj }));
 };
-
 // update job by id
 export const updateJob = async (req, res) => {
   const recruiterId = req?.user._id;
