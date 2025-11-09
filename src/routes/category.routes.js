@@ -3,6 +3,7 @@ import {
     getAllCategories,
     createCategory,
     updateCategory,
+    deleteCategory,
     getPopularCategories
 } from '../controllers/category.controller.js';
 import { wrapAsync } from '../middlewares/error.middleware.js';
@@ -20,9 +21,10 @@ categoryRouter.get('/popular', wrapAsync(getPopularCategories));
 
 categoryRouter.use(authMiddleware, adminMiddleware);
 // create new category
-categoryRouter.use(authMiddleware, adminMiddleware);
 categoryRouter.post('/create', wrapAsync(createCategory));
 // update category by id
 categoryRouter.put('/edit/:id', wrapAsync(updateCategory));
+// delete category by id
+categoryRouter.delete('/:id', wrapAsync(deleteCategory));
 
 export default categoryRouter;
