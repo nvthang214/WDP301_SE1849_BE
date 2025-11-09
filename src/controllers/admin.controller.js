@@ -433,7 +433,7 @@ export const getUserRegistrationStats = async (req, res) => {
 
       monthlyStats.push({
         month: month,
-        monthName: new Date(year, month - 1, 1).toLocaleString('vi-VN', { month: 'long' }),
+        monthName: new Date(year, month - 1, 1).toLocaleString('en-US', { month: 'short' }),
         count: count,
       });
     }
