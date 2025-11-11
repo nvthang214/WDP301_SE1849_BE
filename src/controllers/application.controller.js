@@ -112,10 +112,15 @@ export const getCandidatesInJob = async (req, res) => {
     const candidateIds = applications.map((a) => (a.candidate?._id || a.candidate));
     const profiles = await Profile.find({ user: { $in: candidateIds } }).select("user cv");
     const cvMap = new Map(profiles.map((p) => [p.user.toString(), p.cv || null]));
-    const enriched = applications.map((a) => ({
-      ...a.toObject(),
-      resume: cvMap.get((a.candidate?._id || a.candidate).toString()) || null,
-    }));
+    const enriched = applications.map((a) => {
+      const obj = a.toObject ? a.toObject() : { ...a };
+      return {
+        ...obj,
+        // ensure resume and coverLetter are present at top level for frontend
+        resume: cvMap.get((a.candidate?._id || a.candidate).toString()) || null,
+        coverLetter: obj.coverLetter || obj.coverLetter === '' ? obj.coverLetter : null,
+      };
+    });
 
     return res.status(200).json(toResultOk({ data: enriched }));
   } catch (error) {

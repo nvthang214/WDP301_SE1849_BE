@@ -870,13 +870,39 @@ export const applyJob = async (req, res) => {
       );
     }
 
-    const application = await Application.create({
-      candidate: user._id,
-      job: jobId,
-  resume: hasResumeInPayload ? resume.trim() : profile?.cv || "",
-      coverLetter: coverLetter || "",
-      status: "Pending",
-    });
+    // Try to decrement vacancies atomically if there are vacancies left
+    const updatedJob = await Job.findOneAndUpdate(
+      { _id: jobId, vacancies: { $gt: 0 } },
+      { $inc: { vacancies: -1 } },
+      { new: true }
+    ).lean();
+
+    if (!updatedJob) {
+      //hết tuyển dụng
+      return res.json(
+        toResultError({ statusCode: 400, msg: MESSAGE.NO_VACANCIES_LEFT })
+      );
+    }
+
+    // Create application. If creation fails, rollback the vacancy decrement.
+    let application;
+    try {
+      application = await Application.create({
+        candidate: user._id,
+        job: jobId,
+        resume: hasResumeInPayload ? resume.trim() : profile?.cv || "",
+        coverLetter: coverLetter || "",
+        status: "Pending",
+      });
+    } catch (err) {
+      // rollback vacancy decrement
+      try {
+        await Job.findByIdAndUpdate(jobId, { $inc: { vacancies: 1 } });
+      } catch (rollbackErr) {
+        console.error("Failed to rollback vacancies after application create error", rollbackErr);
+      }
+      throw err;
+    }
 
     const appliedJobs = await hydrateApplications([application.toObject()]);
     const appliedJob =
@@ -886,7 +912,7 @@ export const applyJob = async (req, res) => {
         resume: application.resume,
         coverLetter: application.coverLetter,
         appliedAt: application.createdAt,
-        job,
+        job: updatedJob || job,
       };
 
     return res.status(201).json(
