@@ -214,6 +214,7 @@ export const MESSAGE = {
   APPLY_JOB_SUCCESS: "Ứng tuyển công việc thành công",
   APPLY_JOB_FAILED: "Ứng tuyển công việc thất bại",
   ALREADY_APPLIED: "Bạn đã ứng tuyển công việc này rồi",
+  NO_VACANCIES_LEFT: "Số lượng tuyển dụng cho vị trí này đã hết",
 
   /////////////////////////////////////////////////////
   /////////////////////////////////////////////////////
