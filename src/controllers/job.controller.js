@@ -16,6 +16,7 @@ export const getAllJobs = async (req, res) => {
   const {
     search,
     categoryId,
+    company,
     jobType,
     experience,
     isActive = true,
@@ -35,8 +36,6 @@ export const getAllJobs = async (req, res) => {
       "_id"
     );
     const categoryIdsFromSearch = categories.map((c) => c._id);
-    const companies = await Company.find({ name: { $regex: search, $options: "i" } }).select("_id");
-    const companyIdsFromSearch = companies.map((c) => c._id);
 
     query.$or = [
       { title: { $regex: search, $options: "i" } },
@@ -46,7 +45,6 @@ export const getAllJobs = async (req, res) => {
       { desirable: { $regex: search, $options: "i" } },
       { tags: { $in: tagIds } },
       { category: { $in: categoryIdsFromSearch } },
-      { company: { $in: companyIdsFromSearch } },
       { country: { $regex: search, $options: "i" } },
       { city: { $regex: search, $options: "i" } },
       { jobLevel: { $regex: search, $options: "i" } },
@@ -55,6 +53,14 @@ export const getAllJobs = async (req, res) => {
     ];
   }
   if (categoryId) query.category = categoryId;
+  // Filter by company name
+  if (company) {
+    const companiesFromFilter = await Company.find({ name: { $regex: company, $options: "i" } }).select("_id");
+    const companyIdsFromFilter = companiesFromFilter.map((c) => c._id);
+    if (companyIdsFromFilter.length > 0) {
+      query.company = { $in: companyIdsFromFilter };
+    }
+  }
   if (jobType) query.jobType = jobType;
   if (experience) query.experience = experience;
   if (remote !== undefined) query.remote = remote === "true";
@@ -110,6 +116,7 @@ export const getAllJobsWithAuth = async (req, res) => {
   const {
     search,
     categoryId,
+    company,
     jobType,
     experience,
     isActive = true,
@@ -130,8 +137,6 @@ export const getAllJobsWithAuth = async (req, res) => {
       "_id"
     );
     const categoryIdsFromSearch = categories.map((c) => c._id);
-    const companies = await Company.find({ name: { $regex: search, $options: "i" } }).select("_id");
-    const companyIdsFromSearch = companies.map((c) => c._id);
 
     query.$or = [
       { title: { $regex: search, $options: "i" } },
@@ -141,7 +146,6 @@ export const getAllJobsWithAuth = async (req, res) => {
       { desirable: { $regex: search, $options: "i" } },
       { tags: { $in: tagIds } },
       { category: { $in: categoryIdsFromSearch } },
-      { company: { $in: companyIdsFromSearch } },
       { country: { $regex: search, $options: "i" } },
       { city: { $regex: search, $options: "i" } },
       { jobLevel: { $regex: search, $options: "i" } },
@@ -150,6 +154,14 @@ export const getAllJobsWithAuth = async (req, res) => {
     ];
   }
   if (categoryId) query.category = categoryId;
+  // Filter by company name
+  if (company) {
+    const companiesFromFilter = await Company.find({ name: { $regex: company, $options: "i" } }).select("_id");
+    const companyIdsFromFilter = companiesFromFilter.map((c) => c._id);
+    if (companyIdsFromFilter.length > 0) {
+      query.company = { $in: companyIdsFromFilter };
+    }
+  }
   if (jobType) query.jobType = jobType;
   if (experience) query.experience = experience;
   if (remote !== undefined) query.remote = remote === "true";

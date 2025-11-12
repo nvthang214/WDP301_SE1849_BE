@@ -139,7 +139,7 @@ export const getPopularCategories = async (req, res) => {
         { $group: { _id: '$category', openings: { $sum: 1 } } },
         { $lookup: { from: 'categories', localField: '_id', foreignField: '_id', as: 'category' } },
         { $unwind: '$category' },
-        { $project: { _id: 0, label: '$category.name', openings: 1 } },
+        { $project: { _id: '$category._id', label: '$category.name', openings: 1 } },
         { $sort: { openings: -1 } },
         { $limit: parseInt(limit) }
     ]);
