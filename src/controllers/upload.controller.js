@@ -34,16 +34,6 @@ const parseCvField = (value) => {
 	return null;
 };
 
-const loadUserContext = async (userId) => {
-	const user = await User.findById(userId);
-	if (!user) {
-		return {
-			error: toResultError({ statusCode: 404, msg: MESSAGE.USER_NOT_FOUND }),
-		};
-	}
-
-	return { user };
-};
 
 const parseAvatarField = (value) => {
 	if (!value) return null;
@@ -135,7 +125,7 @@ const validateAvatarFile = (file) => {
 
 	return null;
 };
-
+// tạo payload metadata để lưu trữ
 const buildCvPayload = (file, uploadResult) => ({
 	url: uploadResult.url,
 	publicId: uploadResult.public_id,
@@ -161,7 +151,7 @@ const uploadCandidateCvFile = async (file) => {
 
 	return uploadToCloudinary(file.buffer, CV_CLOUD_FOLDER);
 };
-
+// lưu CV vào profile
 const persistCv = async (userId, profile, payload) => {
 	const serialized = JSON.stringify(payload);
 
@@ -189,7 +179,7 @@ const persistAvatar = async (user, payload) => {
 	await user.save();
 	return user;
 };
-
+// xóa tài nguyên trên cloudinary
 const cleanupCloudinaryAsset = async (publicId, mimeType) => {
 	if (!publicId) return;
 
@@ -385,7 +375,6 @@ export const addCandidateCv = async (req, res) => {
 			return res.status(errorResult.statusCode).json(errorResult);
 		}
 
-		// Sử dụng authUser._id thay vì kiểm tra userId từ params
 		const profile = await Profile.findOne({ user: authUser._id });
 		
 		const fileValidationError = validateCvFile(req.file);
