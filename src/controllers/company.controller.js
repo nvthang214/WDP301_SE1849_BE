@@ -6,7 +6,7 @@ import Job from "../models/Job.js";
 
 //get all companies with search & filters & pagination
 export const getAllCompanies = async (req, res) => {
-  const { search, industry, location, page = 1, limit = 15 } = req.query;
+  const { search, industry, location, page = 1, limit = 15, hasOpenings } = req.query;
   // query object
   let query = {};
   if (search) {
@@ -18,23 +18,68 @@ export const getAllCompanies = async (req, res) => {
   }
   if (industry) query.industry = { $regex: industry, $options: "i" };
   if (location) query.address = { $regex: location, $options: "i" };
+
+  // When hasOpenings=true, we need to compute openings based on Job.vacancies
+  const shouldIncludeOpenings = String(hasOpenings).toLowerCase() === "true";
+
+  // Fetch all companies matching filters first (for accurate openings aggregation)
+  const allCompanies = await Company.find(query);
+
+  let openingsMap = {};
+  let jobCountMap = {};
+
+  if (allCompanies.length) {
+    const companyIds = allCompanies.map((c) => c._id);
+    const agg = await Job.aggregate([
+      { $match: { company: { $in: companyIds }, isActive: true } },
+      {
+        $group: {
+          _id: "$company",
+          openings: { $sum: { $ifNull: ["$vacancies", 0] } },
+          jobCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    openingsMap = Object.fromEntries(agg.map((a) => [String(a._id), a.openings || 0]));
+    jobCountMap = Object.fromEntries(agg.map((a) => [String(a._id), a.jobCount || 0]));
+  }
+
+  const listForPagination = shouldIncludeOpenings
+    ? allCompanies.filter((c) => (openingsMap[String(c._id)] || 0) > 0)
+    : allCompanies;
+
+  const total = shouldIncludeOpenings ? listForPagination.length : await Company.countDocuments(query);
   const skip = (parseInt(page) - 1) * parseInt(limit);
-  const companies = await Company.find(query).skip(skip).limit(parseInt(limit));
-  const total = await Company.countDocuments(query);
-  
+  const limitNum = parseInt(limit);
+
+  // Apply pagination
+  const paginated = (shouldIncludeOpenings
+    ? listForPagination.slice(skip, skip + limitNum)
+    : await Company.find(query).skip(skip).limit(limitNum)
+  ).map((c) => {
+    const obj = c.toObject();
+    const id = String(c._id);
+    return {
+      ...obj,
+      openings: openingsMap[id] ?? 0,
+      jobCount: jobCountMap[id] ?? 0,
+    };
+  });
+
   // Trả về kết quả (có thể là mảng rỗng nếu không có companies)
   res.json(
     toResultOk({
-      msg: companies.length > 0 ? MESSAGE.COMPANY_FETCH_SUCCESS : "No companies found",
+      msg: paginated.length > 0 ? MESSAGE.COMPANY_FETCH_SUCCESS : "No companies found",
       data: {
-        companies,
-        totalPages: Math.ceil(total / limit),
+        companies: paginated,
+        totalPages: Math.ceil(total / limitNum),
       },
       pagination: {
         total,
         page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(total / limit),
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
       },
     })
   );
@@ -42,7 +87,7 @@ export const getAllCompanies = async (req, res) => {
 
 // Get all companies by location with pagination
 export const getAllCompaniesByLocation = async (req, res) => {
-  const { location, page = 1, limit = 15 } = req.query;
+  const { location, page = 1, limit = 15, hasOpenings } = req.query;
   
   // Validate location parameter
   if (!location || location.trim() === '') {
@@ -54,28 +99,69 @@ export const getAllCompaniesByLocation = async (req, res) => {
     address: { $regex: location.trim(), $options: "i" }
   };
   
+  const shouldIncludeOpenings = String(hasOpenings).toLowerCase() === "true";
+
+  // Fetch all companies in location
+  const allCompanies = await Company.find(query).select('name address industry logo description contact website');
+
+  let openingsMap = {};
+  let jobCountMap = {};
+
+  if (allCompanies.length) {
+    const companyIds = allCompanies.map((c) => c._id);
+    const agg = await Job.aggregate([
+      { $match: { company: { $in: companyIds }, isActive: true } },
+      {
+        $group: {
+          _id: "$company",
+          openings: { $sum: { $ifNull: ["$vacancies", 0] } },
+          jobCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    openingsMap = Object.fromEntries(agg.map((a) => [String(a._id), a.openings || 0]));
+    jobCountMap = Object.fromEntries(agg.map((a) => [String(a._id), a.jobCount || 0]));
+  }
+
+  const listForPagination = shouldIncludeOpenings
+    ? allCompanies.filter((c) => (openingsMap[String(c._id)] || 0) > 0)
+    : allCompanies;
+
+  const total = shouldIncludeOpenings ? listForPagination.length : await Company.countDocuments(query);
   const skip = (parseInt(page) - 1) * parseInt(limit);
-  const companies = await Company.find(query)
-    .skip(skip)
-    .limit(parseInt(limit))
-    .select('name address industry logo description contact website');
-    
-  const total = await Company.countDocuments(query);
+  const limitNum = parseInt(limit);
+
+  const paginated = (shouldIncludeOpenings
+    ? listForPagination.slice(skip, skip + limitNum)
+    : await Company.find(query)
+        .skip(skip)
+        .limit(limitNum)
+        .select('name address industry logo description contact website')
+  ).map((c) => {
+    const obj = c.toObject();
+    const id = String(c._id);
+    return {
+      ...obj,
+      openings: openingsMap[id] ?? 0,
+      jobCount: jobCountMap[id] ?? 0,
+    };
+  });
   
   // Trả về kết quả (có thể là mảng rỗng)
   res.json(
     toResultOk({
-      msg: companies.length > 0 ? MESSAGE.COMPANY_FETCH_SUCCESS : "No companies found in this location",
+      msg: paginated.length > 0 ? MESSAGE.COMPANY_FETCH_SUCCESS : "No companies found in this location",
       data: {
-        companies,
+        companies: paginated,
         location: location.trim(),
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limitNum),
       },
       pagination: {
         total,
         page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(total / limit),
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
       },
     })
   );
