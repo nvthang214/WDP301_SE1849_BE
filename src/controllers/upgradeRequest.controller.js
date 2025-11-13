@@ -153,21 +153,38 @@ export const getMyUpgradeRequest = async (req, res) => {
   }
 };
 
-// Admin: Lấy tất cả upgrade requests
+// Admin: Lấy tất cả upgrade requests với pagination
 export const getAllUpgradeRequests = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, page = 1, limit = 50 } = req.query;
     const filter = status ? { status } : {};
     
+    // Parse page and limit to numbers
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 50;
+    const skip = (pageNum - 1) * limitNum;
+    
+    // Get total count for pagination
+    const total = await UpgradeRequest.countDocuments(filter);
+    
+    // Fetch requests with pagination
     const requests = await UpgradeRequest.find(filter)
       .populate("user", "firstName lastName email")
       .populate("reviewedBy", "firstName lastName")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
 
     res.status(200).json({
       success: true,
       message: "Upgrade requests retrieved successfully",
       data: requests,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum)
+      }
     });
   } catch (error) {
     console.error("Error getting upgrade requests:", error);
