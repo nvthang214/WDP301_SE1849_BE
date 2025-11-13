@@ -41,4 +41,10 @@ const UpgradeRequestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Add indexes for better query performance
+UpgradeRequestSchema.index({ createdAt: -1 }); // For sorting by creation date
+UpgradeRequestSchema.index({ status: 1 }); // For filtering by status
+UpgradeRequestSchema.index({ user: 1 }); // For finding user's requests
+UpgradeRequestSchema.index({ status: 1, createdAt: -1 }); // Compound index for common query pattern
+
 export default mongoose.model("UpgradeRequest", UpgradeRequestSchema);
