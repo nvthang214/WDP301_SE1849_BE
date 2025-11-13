@@ -1,20 +1,30 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import http from "http";
 import connectDB from "./databases/databaseConnect.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import appRoutes from "./routes/app.routes.js";
 import cookieParser from "cookie-parser";
+import { initSocketServer } from "./lib/socket/index.js";
 
 dotenv.config();
 const app = express();
 
+const resolveOrigins = () => {
+  const origin = process.env.CLIENT_URL || "http://localhost:5173";
+  return origin
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+};
+
 // Middleware setup
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: resolveOrigins(),
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -37,9 +47,15 @@ app.use("/api", appRoutes);
 // Error handling middleware
 app.use(errorHandler);
 
-// Start the server
-app.listen(process.env.PORT || 3000, () => {
-  console.log(`Server is running on port ${process.env.PORT || 3000}`);
+// Start the server with Socket.io
+const server = http.createServer(app);
+initSocketServer(server);
+
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
+export { app, server };
 export default app;
