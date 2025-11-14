@@ -8,7 +8,7 @@ import Category from "../models/Category.js";
 import Company from "../models/Company.js";
 import { toResultOk } from "../results/Result.js";
 import { getEmbedding } from "../lib/vectorstores/embedding.js";
-import { upsertItems, deleteItems } from "../lib/vectorstores/pineconeStore.js";
+import { upsertItems } from "../lib/vectorstores/pineconeStore.js";
 import Profile from '../models/Profile.js';
 
 
@@ -40,9 +40,6 @@ export const getAllJobs = async (req, res) => {
     query.$or = [
       { title: { $regex: search, $options: "i" } },
       { location: { $regex: search, $options: "i" } },
-      { description: { $regex: search, $options: "i" } },
-      { requirements: { $regex: search, $options: "i" } },
-      { desirable: { $regex: search, $options: "i" } },
       { tags: { $in: tagIds } },
       { category: { $in: categoryIdsFromSearch } },
       { country: { $regex: search, $options: "i" } },
@@ -141,9 +138,6 @@ export const getAllJobsWithAuth = async (req, res) => {
     query.$or = [
       { title: { $regex: search, $options: "i" } },
       { location: { $regex: search, $options: "i" } },
-      { description: { $regex: search, $options: "i" } },
-      { requirements: { $regex: search, $options: "i" } },
-      { desirable: { $regex: search, $options: "i" } },
       { tags: { $in: tagIds } },
       { category: { $in: categoryIdsFromSearch } },
       { country: { $regex: search, $options: "i" } },
@@ -493,32 +487,76 @@ Remote: ${populatedJob.remote ? "Yes" : "No"}
   res.json(toResultOk({ msg: MESSAGE.JOB_UPDATE_SUCCESS, data: updatedJob }));
 };
 
-// deactivate job by id
-export const deactivateJob = async (req, res) => {
-  const { id } = req.params;
-  const job = await Job.findById(id);
-  if (!job) {
-    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
-  }
-  job.isActive = false;
-  await job.save();
-
-  // Remove from Pinecone when job is deactivated
-  try {
-    await deleteItems([id]);
-  } catch (deleteError) {
-    console.error("Error deleting embedding from Pinecone:", deleteError);
-    // Don't throw error, job is still deactivated successfully
-  }
-
-  res.json(toResultOk({ msg: MESSAGE.JOB_DEACTIVATE_SUCCESS }));
-};
-
 // get jobs by recruiter id
 export const getJobsByRecruiterId = async (req, res) => {
   const recruiterId = req.user._id;
-  const jobs = await Job.find({ recruiter: recruiterId });
-  res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobs }));
+  const {
+    search,
+    categoryId,
+    jobType,
+    experience,
+    isActive,
+    page = 1,
+    limit = 15,
+    remote,
+  } = req.query;
+
+  let query = { recruiter: recruiterId };
+
+  if (search) {
+    const tags = await Tag.find({ name: { $regex: search, $options: "i" } }).select("_id");
+    const tagIds = tags.map((tag) => tag._id);
+    const categories = await Category.find({ name: { $regex: search, $options: "i" } }).select("_id");
+    const categoryIdsFromSearch = categories.map((c) => c._id);
+
+    query.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { location: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+      { requirements: { $regex: search, $options: "i" } },
+      { tags: { $in: tagIds } },
+      { category: { $in: categoryIdsFromSearch } },
+      { country: { $regex: search, $options: "i" } },
+      { city: { $regex: search, $options: "i" } },
+      { jobLevel: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  if (categoryId) query.category = categoryId;
+  if (jobType) query.jobType = jobType;
+  if (experience) query.experience = experience;
+  if (remote !== undefined) query.remote = remote === "true";
+  if (typeof isActive !== "undefined") {
+    query.isActive = typeof isActive === "string" ? isActive === "true" : !!isActive;
+  }
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const jobs = await Job.find(query)
+    .skip(skip)
+    .limit(parseInt(limit))
+    .populate({ path: "category", select: "name" })
+    .populate({ path: "company", select: "name logo" })
+    .populate({ path: "tags", select: "name" })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const total = await Job.countDocuments(query);
+
+  res.json(
+    toResultOk({
+      msg: MESSAGE.JOB_FETCH_SUCCESS,
+      data: {
+        jobs,
+        totalPages: Math.ceil(total / limit),
+      },
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / limit),
+      },
+    })
+  );
 };
 
 // get number of application of a job by job id
@@ -570,4 +608,17 @@ export const getApplicationsByJobId = async (req, res) => {
   });
 
   res.json(toResultOk({ msg: MESSAGE.JOB_APPLICATIONS_FETCH_SUCCESS, data: formattedApplications }));
+};
+
+// toggle job status by id
+export const toggleJobStatus = async (req, res) => {
+  const { id } = req.params;
+  const job = await Job.findById(id);
+  if (!job) {
+    throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
+  }
+  job.isActive = !job.isActive;
+  await job.save();
+
+  res.json(toResultOk({ msg: MESSAGE.JOB_STATUS_TOGGLE_SUCCESS, data: job }));
 };
