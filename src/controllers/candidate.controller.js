@@ -8,8 +8,9 @@ import Company from "../models/Company.js";
 import Category from "../models/Category.js";
 import JobFavorite from "../models/JobFavorite.js";
 import Tag from "../models/Tag.js";
-
-
+import { NOTIFICATION_CATEGORY, NOTIFICATION_PRIORITY } from "../constants/notification.js";
+import { notifyUser } from "../services/notification.service.js";
+import ErrorResponse from "../lib/helper/ErrorResponse.js";
 
 const SUPPORTED_SOCIAL_PLATFORMS = ["linkedin", "twitter", "facebook", "instagram"];
 //
@@ -30,7 +31,7 @@ const normalizeToObjectId = (value) => {
 
   return null;
 };
-// lọc và thu thập các ObjectId hợp lệ 
+// lọc và thu thập các ObjectId hợp lệ
 const collectValidObjectIds = (values = []) => {
   const seen = new Set();
   const result = [];
@@ -119,8 +120,8 @@ const formatTopAppliedJob = (job = {}, stat = {}) => {
     minSalary: job?.minSalary ?? null,
     maxSalary: job?.maxSalary ?? null,
     salaryType: job?.salaryType || null,
-  totalApplicants: stat?.totalApplicants || 0,
-  totalCandidates: stat?.totalCandidates || 0,
+    totalApplicants: stat?.totalApplicants || 0,
+    totalCandidates: stat?.totalCandidates || 0,
     lastAppliedAt: stat?.lastAppliedAt || null,
     vacancies: job?.vacancies ?? null,
     location: location || "",
@@ -145,7 +146,7 @@ const formatTopAppliedJob = (job = {}, stat = {}) => {
     updatedAt: job?.updatedAt || null,
   };
 };
-// Lọc data ứng tuyển 
+// Lọc data ứng tuyển
 const hydrateApplications = async (applications = []) => {
   if (!applications.length) return [];
 
@@ -162,13 +163,19 @@ const hydrateApplications = async (applications = []) => {
 
   const [companies, categories, tags] = await Promise.all([
     companyIds.length
-      ? Company.find({ _id: { $in: companyIds } }).select("name logo").lean()
+      ? Company.find({ _id: { $in: companyIds } })
+          .select("name logo")
+          .lean()
       : Promise.resolve([]),
     categoryIds.length
-      ? Category.find({ _id: { $in: categoryIds } }).select("name").lean()
+      ? Category.find({ _id: { $in: categoryIds } })
+          .select("name")
+          .lean()
       : Promise.resolve([]),
     tagIds.length
-      ? Tag.find({ _id: { $in: tagIds } }).select("name").lean()
+      ? Tag.find({ _id: { $in: tagIds } })
+          .select("name")
+          .lean()
       : Promise.resolve([]),
   ]);
 
@@ -188,9 +195,7 @@ const hydrateApplications = async (applications = []) => {
       const companyId = normalizeToObjectId(rawJob.company);
       const categoryId = normalizeToObjectId(rawJob.category);
       const jobTagIds = Array.isArray(rawJob.tags)
-        ? rawJob.tags
-            .map((tagId) => normalizeToObjectId(tagId))
-            .filter((tagId) => tagId)
+        ? rawJob.tags.map((tagId) => normalizeToObjectId(tagId)).filter((tagId) => tagId)
         : [];
 
       const hydratedJob = {
@@ -234,10 +239,7 @@ const extractProfilePayload = (payload = {}) => {
   const result = {};
 
   for (const field of baseFields) {
-    if (
-      Object.prototype.hasOwnProperty.call(payload, field) &&
-      payload[field] !== undefined
-    ) {
+    if (Object.prototype.hasOwnProperty.call(payload, field) && payload[field] !== undefined) {
       result[field] = payload[field];
     }
   }
@@ -258,14 +260,10 @@ export const getCandidateProfile = async (req, res) => {
   try {
     const user = req.user;
     if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
+      return res.json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
     }
 
-    const profile = await Profile.findOne({ user: user._id })
-      .populate("tags", "name")
-      .lean();
+    const profile = await Profile.findOne({ user: user._id }).populate("tags", "name").lean();
 
     if (!profile)
       return res.json(toResultError({ statusCode: 404, msg: MESSAGE.PROFILE_NOT_FOUND }));
@@ -288,9 +286,7 @@ export const createCandidateProfile = async (req, res) => {
   try {
     const user = req.user;
     if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
+      return res.json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
     }
 
     const existingProfile = await Profile.findOne({ user: user._id });
@@ -330,9 +326,7 @@ export const updateCandidateProfile = async (req, res) => {
   try {
     const user = req.user;
     if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
+      return res.json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
     }
 
     const profile = await Profile.findOne({ user: user._id });
@@ -379,9 +373,7 @@ export const getCandidateSocial = async (req, res) => {
   try {
     const user = req.user;
     if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
+      return res.json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
     }
 
     const profile = await Profile.findOne({ user: user._id }).select("social");
@@ -402,9 +394,7 @@ export const getCandidateSocial = async (req, res) => {
     );
   } catch (error) {
     console.error(error);
-    return res.json(
-      toResultError({ statusCode: 500, msg: MESSAGE.CANDIDATE_SOCIAL_FETCH_FAILED })
-    );
+    return res.json(toResultError({ statusCode: 500, msg: MESSAGE.CANDIDATE_SOCIAL_FETCH_FAILED }));
   }
 };
 
@@ -413,13 +403,13 @@ export const addCandidateSocial = async (req, res) => {
     const { social } = req.body;
     const user = req.user;
     if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
+      return res.json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
     }
 
     if (!Array.isArray(social))
-      return res.json(toResultError({ statusCode: 400, msg: MESSAGE.CANDIDATE_SOCIAL_ALREADY_EXISTS }));
+      return res.json(
+        toResultError({ statusCode: 400, msg: MESSAGE.CANDIDATE_SOCIAL_ALREADY_EXISTS })
+      );
 
     let profile = await Profile.findOne({ user: user._id });
 
@@ -464,14 +454,12 @@ export const updateCandidateSocial = async (req, res) => {
 
     if (!SUPPORTED_SOCIAL_PLATFORMS.includes(platform))
       return res.json(
-        toResultError({ statusCode: 400, msg: MESSAGE.CANDIDATE_PROFILE_UPDATE_FAILED})
+        toResultError({ statusCode: 400, msg: MESSAGE.CANDIDATE_PROFILE_UPDATE_FAILED })
       );
 
     const user = req.user;
     if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
+      return res.json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
     }
 
     let profile = await Profile.findOne({ user: user._id });
@@ -505,13 +493,10 @@ export const deleteCandidateSocial = async (req, res) => {
     const { platform } = req.body;
     const user = req.user;
     if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
+      return res.json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
     }
 
-    if (!platform)
-      return res.json(toResultError({ statusCode: 400, msg: MESSAGE.FIELD_REQUIRED }));
+    if (!platform) return res.json(toResultError({ statusCode: 400, msg: MESSAGE.FIELD_REQUIRED }));
 
     const profile = await Profile.findOne({ user: user._id });
     if (!profile)
@@ -540,9 +525,7 @@ export const getCandidateAppliedJobs = async (req, res) => {
   try {
     const user = req.user;
     if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
+      return res.json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
     }
 
     const applications = await Application.find({ candidate: user._id })
@@ -572,9 +555,7 @@ export const getCandidateFavoriteJobs = async (req, res) => {
   try {
     const user = req.user;
     if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
+      return res.json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
     }
 
     const favorites = await JobFavorite.find({ candidate: user._id })
@@ -737,13 +718,19 @@ export const getTopAppliedJobs = async (req, res) => {
 
     const [companies, categories, tags] = await Promise.all([
       companyIds.length
-        ? Company.find({ _id: { $in: companyIds } }).select("name logo").lean()
+        ? Company.find({ _id: { $in: companyIds } })
+            .select("name logo")
+            .lean()
         : Promise.resolve([]),
       categoryIds.length
-        ? Category.find({ _id: { $in: categoryIds } }).select("name").lean()
+        ? Category.find({ _id: { $in: categoryIds } })
+            .select("name")
+            .lean()
         : Promise.resolve([]),
       tagIds.length
-        ? Tag.find({ _id: { $in: tagIds } }).select("name").lean()
+        ? Tag.find({ _id: { $in: tagIds } })
+            .select("name")
+            .lean()
         : Promise.resolve([]),
     ]);
 
@@ -814,9 +801,7 @@ export const applyJob = async (req, res) => {
   try {
     const user = req.user;
     if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
+      return res.json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
     }
     const roleName = user?.role?.name || user?.role;
     if (!roleName || String(roleName).toLowerCase() !== "candidate") {
@@ -830,22 +815,17 @@ export const applyJob = async (req, res) => {
 
     const { jobId, resume, coverLetter } = req.body;
     if (!jobId) {
-      return res.json(
-        toResultError({ statusCode: 400, msg: MESSAGE.FIELD_REQUIRED })
-      );
+      return res.json(toResultError({ statusCode: 400, msg: MESSAGE.FIELD_REQUIRED }));
     }
 
     const job = await Job.findById(jobId).lean();
     if (!job) {
-      return res.json(
-        toResultError({ statusCode: 404, msg: MESSAGE.JOB_NOT_FOUND })
-      );
+      return res.json(toResultError({ statusCode: 404, msg: MESSAGE.JOB_NOT_FOUND }));
     }
 
     const profile = await Profile.findOne({ user: user._id }).select("cv").lean();
     const hasProfileCv = Boolean(profile?.cv && String(profile.cv).trim());
-    const hasResumeInPayload =
-      typeof resume === "string" && resume.trim().length > 0;
+    const hasResumeInPayload = typeof resume === "string" && resume.trim().length > 0;
 
     if (!hasProfileCv && !hasResumeInPayload) {
       return res.json(
@@ -870,21 +850,55 @@ export const applyJob = async (req, res) => {
     const application = await Application.create({
       candidate: user._id,
       job: jobId,
-  resume: hasResumeInPayload ? resume.trim() : profile?.cv || "",
+      resume: hasResumeInPayload ? resume.trim() : profile?.cv || "",
       coverLetter: coverLetter || "",
       status: "Pending",
     });
 
+    let recruiterId = job?.recruiter;
+    if (!recruiterId && job?.company) {
+      const company = await Company.findById(job.company).select("recruiter").lean();
+      recruiterId = company?.recruiter || null;
+    }
+
+    const candidateName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+    const jobTitle = job?.title || "Công việc";
+
+    const notificationTasks = [];
+    if (recruiterId) {
+      notificationTasks.push(
+        notifyUser({
+          userId: recruiterId,
+          senderId: user._id,
+          title: "Ứng viên mới",
+          message: `${candidateName || "Ứng viên"} đã ứng tuyển vị trí ${jobTitle}.`,
+          category: NOTIFICATION_CATEGORY.APPLICATION,
+          priority: NOTIFICATION_PRIORITY.INFO,
+          metadata: {
+            jobId: job._id.toString(),
+            applicationId: application._id.toString(),
+          },
+          action: {
+            label: "Xem ứng viên",
+            url: "/recruiter/applications" + `?jobId=${job._id.toString()}`,
+          },
+        })
+      );
+    }
+
+    if (notificationTasks.length) {
+      await Promise.allSettled(notificationTasks);
+    }
+
     const appliedJobs = await hydrateApplications([application.toObject()]);
-    const appliedJob =
-      appliedJobs[0] || {
-        applicationId: application._id,
-        status: application.status,
-        resume: application.resume,
-        coverLetter: application.coverLetter,
-        appliedAt: application.createdAt,
-        job,
-      };
+    const appliedJob = appliedJobs[0] || {
+      applicationId: application._id,
+      status: application.status,
+      resume: application.resume,
+      coverLetter: application.coverLetter,
+      appliedAt: application.createdAt,
+      job,
+    };
 
     return res.status(201).json(
       toResultOk({
@@ -908,9 +922,7 @@ export const getInfoCandidate = async (req, res) => {
   try {
     const user = req.user;
     if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
+      return res.json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
     }
     return res.json(
       toResultOk({
@@ -931,32 +943,24 @@ export const updateInfoCandidate = async (req, res) => {
     const { firstName, lastName, phoneNumber } = req.body;
     const user = req.user;
     if (!user) {
-      return res.json(
-        toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED })
-      );
+      return res.json(toResultError({ statusCode: 401, msg: MESSAGE.UNAUTHORIZED }));
     }
     if (typeof firstName === "string" && firstName.trim()) user.firstName = firstName.trim();
     if (typeof lastName === "string" && lastName.trim()) user.lastName = lastName.trim();
 
     if (phoneNumber !== undefined) {
       if (typeof phoneNumber !== "string") {
-        return res.json(
-          toResultError({ statusCode: 400, msg: MESSAGE.PHONENUMBER_INVALID })
-        );
+        return res.json(toResultError({ statusCode: 400, msg: MESSAGE.PHONENUMBER_INVALID }));
       }
 
       const sanitizedPhone = phoneNumber.trim();
       if (!sanitizedPhone) {
-        return res.json(
-          toResultError({ statusCode: 400, msg: MESSAGE.PHONENUMBER_INVALID })
-        );
+        return res.json(toResultError({ statusCode: 400, msg: MESSAGE.PHONENUMBER_INVALID }));
       }
 
       const phoneRegex = /^[0-9+()\-\s]{6,20}$/;
       if (!phoneRegex.test(sanitizedPhone)) {
-        return res.json(
-          toResultError({ statusCode: 400, msg: MESSAGE.PHONENUMBER_INVALID })
-        );
+        return res.json(toResultError({ statusCode: 400, msg: MESSAGE.PHONENUMBER_INVALID }));
       }
 
       user.phoneNumber = sanitizedPhone;
@@ -976,18 +980,17 @@ export const updateInfoCandidate = async (req, res) => {
   }
 };
 
-
 export const getJobById = async (req, res) => {
   const { id } = req.params;
 
   const userId = req.user?._id || null;
 
   const job = await Job.findById(id)
-    .populate({ path: 'recruiter', select: 'username firstName lastName -_id' })
-    .populate({ path: 'category', select: 'name' })
-    .populate({ path: 'company', select: 'name logo' })
-    .populate({ path: 'company', select: 'name logo' })
-    .populate({ path: 'tags', select: 'name' });
+    .populate({ path: "recruiter", select: "username firstName lastName -_id" })
+    .populate({ path: "category", select: "name" })
+    .populate({ path: "company", select: "name logo" })
+    .populate({ path: "company", select: "name logo" })
+    .populate({ path: "tags", select: "name" });
   if (!job) {
     throw new ErrorResponse(404, MESSAGE.JOB_NOT_FOUND);
   }
@@ -1002,7 +1005,4 @@ export const getJobById = async (req, res) => {
   jobObj.isFavorite = isFavorite;
 
   res.json(toResultOk({ msg: MESSAGE.JOB_FETCH_SUCCESS, data: jobObj }));
-}
-
-
-
+};

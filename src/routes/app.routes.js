@@ -10,6 +10,7 @@ import publicRoutes from "./public.routes.js";
 import recruiterRoutes from "./recruiter.routes.js";
 import tagRoutes from "./tag.routes.js";
 import uploadRoutes from "./upload.routes.js";
+import notificationRoutes from "./notification.routes.js";
 
 const appRoutes = express.Router();
 
@@ -30,6 +31,7 @@ appRoutes.use("/candidates", candidateRoutes);
 
 appRoutes.use("/applications", applicationRoutes);
 appRoutes.use("/uploads", uploadRoutes);
+appRoutes.use("/notifications", notificationRoutes);
 
 appRoutes.use("/upgrade-requests", upgradeRequestRoutes);
 

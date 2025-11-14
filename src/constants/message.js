@@ -12,6 +12,12 @@ export const MESSAGE = {
   REFRESH_TOKEN_SUCCESS: "Làm mới token thành công",
   SEND_MAIL_ERROR: "Lỗi gửi email, vui lòng thử lại sau",
   GG_TOKEN_INVALID: "Token Google không hợp lệ",
+  NOTIFICATION_FETCH_SUCCESS: "Lấy danh sách thông báo thành công",
+  NOTIFICATION_MARK_READ_SUCCESS: "Đánh dấu thông báo thành công",
+  NOTIFICATION_MARK_ALL_SUCCESS: "Đã đánh dấu tất cả thông báo là đã đọc",
+  NOTIFICATION_CREATE_SUCCESS: "Gửi thông báo thành công",
+  NOTIFICATION_NOT_FOUND: "Không tìm thấy thông báo",
+  NOTIFICATION_ROLE_REQUIRED: "Vui lòng chọn nhóm người nhận",
 
   // THÔNG BÁO VALIDATION
   FIELD_REQUIRED: "Vui lòng điền đầy đủ thông tin",
