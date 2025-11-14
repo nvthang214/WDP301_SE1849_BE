@@ -6,12 +6,11 @@ import {
     getJobById,
     getJobByIdWithAuth,
     updateJob,
-    deactivateJob,
     getJobsByRecruiterId,
     toggleFavoriteAJob,
     getNumberOfApplicationsByJobId,
     getApplicationsByJobId,
-    // toggleJobStatus,
+    toggleJobStatus,
     // expireJobById
 } from '../controllers/job.controller.js';
 import { wrapAsync } from '../middlewares/error.middleware.js';
@@ -47,8 +46,8 @@ jobRoutes.use(recruiterMiddleware);
 // // expire job by id
 // jobRoutes.patch('/expire/:id', wrapAsync(expireJobById));
 
-// // toggle job status by id
-// jobRoutes.patch('/status/:id', wrapAsync(toggleJobStatus));
+// toggle job status by id
+jobRoutes.patch('/status/:id', wrapAsync(toggleJobStatus));
 
 // get number of applications of a job by job id
 jobRoutes.get('/applications/count/:jobId', wrapAsync(getNumberOfApplicationsByJobId));
@@ -61,9 +60,6 @@ jobRoutes.post('/post', wrapAsync(createJob));
 
 // update job by id
 jobRoutes.put('/edit/:id', wrapAsync(updateJob));
-
-// deactivate job by id
-jobRoutes.patch('/deactivate/:id', wrapAsync(deactivateJob));
 
 // get jobs by recruiter id
 jobRoutes.get('/recruiter/my-jobs', wrapAsync(getJobsByRecruiterId));
