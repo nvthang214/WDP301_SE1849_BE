@@ -12,9 +12,7 @@ import Tag from "../models/Tag.js";
 
 
 const SUPPORTED_SOCIAL_PLATFORMS = ["linkedin", "twitter", "facebook", "instagram"];
-
-const PROFILE_SOCIAL_FIELDS = ["linkedin", "twitter", "facebook", "instagram"];
-
+//
 const normalizeToObjectId = (value) => {
   if (!value) return null;
   if (value instanceof mongoose.Types.ObjectId) return value;
@@ -32,7 +30,7 @@ const normalizeToObjectId = (value) => {
 
   return null;
 };
-
+// lọc và thu thập các ObjectId hợp lệ 
 const collectValidObjectIds = (values = []) => {
   const seen = new Set();
   const result = [];
@@ -50,7 +48,6 @@ const collectValidObjectIds = (values = []) => {
 
   return result;
 };
-
 const buildDocsMap = (docs = []) => {
   const map = new Map();
   for (const doc of docs) {
@@ -60,7 +57,7 @@ const buildDocsMap = (docs = []) => {
   }
   return map;
 };
-
+// parse sang Int
 const parsePositiveInt = (value, defaultValue = 6, maxValue = 20) => {
   let numericValue = Number.NaN;
 
@@ -148,7 +145,7 @@ const formatTopAppliedJob = (job = {}, stat = {}) => {
     updatedAt: job?.updatedAt || null,
   };
 };
-
+// Lọc data ứng tuyển 
 const hydrateApplications = async (applications = []) => {
   if (!applications.length) return [];
 
@@ -221,7 +218,7 @@ const sanitizeSocialPayload = (social) => {
   if (!social || typeof social !== "object") return null;
 
   const sanitized = {};
-  for (const field of PROFILE_SOCIAL_FIELDS) {
+  for (const field of SUPPORTED_SOCIAL_PLATFORMS) {
     const value = social[field];
     if (typeof value === "string") {
       const trimmed = value.trim();
@@ -231,7 +228,7 @@ const sanitizeSocialPayload = (social) => {
 
   return Object.keys(sanitized).length ? sanitized : null;
 };
-
+// Lấy dữ liệu profile từ payload
 const extractProfilePayload = (payload = {}) => {
   const baseFields = ["experience", "education", "bio", "cv", "location"];
   const result = {};
@@ -870,39 +867,13 @@ export const applyJob = async (req, res) => {
       );
     }
 
-    // Try to decrement vacancies atomically if there are vacancies left
-    const updatedJob = await Job.findOneAndUpdate(
-      { _id: jobId, vacancies: { $gt: 0 } },
-      { $inc: { vacancies: -1 } },
-      { new: true }
-    ).lean();
-
-    if (!updatedJob) {
-      //hết tuyển dụng
-      return res.json(
-        toResultError({ statusCode: 400, msg: MESSAGE.NO_VACANCIES_LEFT })
-      );
-    }
-
-    // Create application. If creation fails, rollback the vacancy decrement.
-    let application;
-    try {
-      application = await Application.create({
-        candidate: user._id,
-        job: jobId,
-        resume: hasResumeInPayload ? resume.trim() : profile?.cv || "",
-        coverLetter: coverLetter || "",
-        status: "Pending",
-      });
-    } catch (err) {
-      // rollback vacancy decrement
-      try {
-        await Job.findByIdAndUpdate(jobId, { $inc: { vacancies: 1 } });
-      } catch (rollbackErr) {
-        console.error("Failed to rollback vacancies after application create error", rollbackErr);
-      }
-      throw err;
-    }
+    const application = await Application.create({
+      candidate: user._id,
+      job: jobId,
+  resume: hasResumeInPayload ? resume.trim() : profile?.cv || "",
+      coverLetter: coverLetter || "",
+      status: "Pending",
+    });
 
     const appliedJobs = await hydrateApplications([application.toObject()]);
     const appliedJob =
@@ -912,7 +883,7 @@ export const applyJob = async (req, res) => {
         resume: application.resume,
         coverLetter: application.coverLetter,
         appliedAt: application.createdAt,
-        job: updatedJob || job,
+        job,
       };
 
     return res.status(201).json(
